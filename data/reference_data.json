@@ -1,0 +1,1090 @@
+{
+ "version": "2026-11-04",
+ "accessed": "2026-11-04",
+ "note": "Viitetiedot ladataan tietokantaan komennolla scripts/update_reference_data.py. Arvot eivät päivity automaattisesti.",
+ "devices": [
+  {
+   "id": "pyykinpesukone-eco",
+   "name": "Pyykinpesukone, eco 40–60",
+   "category": "Pyykki",
+   "kind": "cycle",
+   "duration_min": 210,
+   "default_start": "22:00",
+   "energy_kwh": 0.5,
+   "profile": [
+    3,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "notes": "EU-energiamerkin eco 40–60 -ohjelma. Uusien koneiden energiamerkit 20–70 kWh / 100 pesua; tyypillinen n. 0,5 kWh.",
+   "sources": [
+    {
+     "name": "Topten.eu (EPREL-tiedot): pyykinpesukoneet",
+     "url": "https://www.topten.eu/private/products/washing_machines"
+    },
+    {
+     "name": "EU-energiamerkki (EPREL), kWh/100 pesua",
+     "url": "https://eprel.ec.europa.eu/"
+    }
+   ]
+  },
+  {
+   "id": "pyykinpesukone-60",
+   "name": "Pyykinpesukone, 60 °C",
+   "category": "Pyykki",
+   "kind": "cycle",
+   "duration_min": 120,
+   "default_start": "18:00",
+   "energy_kwh": 1.0,
+   "profile": [
+    4,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "notes": "Helen: 0,6–1,7 kWh/kerta. Lämmitys painottuu pesun alkuun.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "kuivausrumpu-lp",
+   "name": "Kuivausrumpu, lämpöpumppu",
+   "category": "Pyykki",
+   "kind": "cycle",
+   "duration_min": 180,
+   "default_start": "20:00",
+   "energy_kwh": 1.5,
+   "notes": "Energiamerkki n. 235 kWh / 160 kuivausta ≈ 1,5 kWh.",
+   "sources": [
+    {
+     "name": "Zanussi: kuivausrumpujen energiamerkinnät (lämpöpumppu vs. kondensaatio)",
+     "url": "https://zanussi.co.uk/support/support-articles/laundry/dryers/zanussi-dryers-energy-efficiency-heatpump-vs-condenser"
+    }
+   ]
+  },
+  {
+   "id": "kuivausrumpu-kond",
+   "name": "Kuivausrumpu, kondensaatio",
+   "category": "Pyykki",
+   "kind": "cycle",
+   "duration_min": 145,
+   "default_start": "20:00",
+   "energy_kwh": 3.5,
+   "notes": "Helen: 1,9–5,5 kWh/kerta; energiamerkki ≈ 3,5 kWh.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    },
+    {
+     "name": "Zanussi: kuivausrumpujen energiamerkinnät (lämpöpumppu vs. kondensaatio)",
+     "url": "https://zanussi.co.uk/support/support-articles/laundry/dryers/zanussi-dryers-energy-efficiency-heatpump-vs-condenser"
+    }
+   ]
+  },
+  {
+   "id": "kuivauskaappi",
+   "name": "Kuivauskaappi",
+   "category": "Pyykki",
+   "kind": "cycle",
+   "duration_min": 120,
+   "default_start": "20:00",
+   "energy_kwh": 4.0,
+   "notes": "Helen: 4 kWh/kerta.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "astianpesukone-eco",
+   "name": "Astianpesukone, eco",
+   "category": "Keittiö",
+   "kind": "cycle",
+   "duration_min": 240,
+   "default_start": "22:00",
+   "energy_kwh": 0.6,
+   "profile": [
+    3,
+    1,
+    1,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "notes": "Energiamerkin eco-ohjelma, uudet koneet n. 40–67 kWh / 100 pesua.",
+   "sources": [
+    {
+     "name": "Topten.eu (EPREL-tiedot): astianpesukoneet",
+     "url": "https://www.topten.eu/private/products/dishwashers"
+    },
+    {
+     "name": "EU-energiamerkki (EPREL), kWh/100 pesua",
+     "url": "https://eprel.ec.europa.eu/"
+    }
+   ]
+  },
+  {
+   "id": "astianpesukone",
+   "name": "Astianpesukone, normaali",
+   "category": "Keittiö",
+   "kind": "cycle",
+   "duration_min": 90,
+   "default_start": "19:00",
+   "energy_kwh": 1.0,
+   "profile": [
+    3,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "notes": "Helen: 0,5–1,6 kWh/kerta.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "vedenkeitin",
+   "name": "Vedenkeitin (1 l)",
+   "category": "Keittiö",
+   "kind": "cycle",
+   "duration_min": 4,
+   "default_start": "07:00",
+   "energy_kwh": 0.1,
+   "notes": "Helen: 0,2 kWh / 10 min; litran keitto n. 0,1 kWh.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "kahvinkeitin",
+   "name": "Kahvinkeitin",
+   "category": "Keittiö",
+   "kind": "power",
+   "duration_min": 10,
+   "default_start": "07:00",
+   "power_kw": 0.6,
+   "notes": "Helen: 0,1 kWh / 10 min.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "mikroaaltouuni",
+   "name": "Mikroaaltouuni",
+   "category": "Keittiö",
+   "kind": "power",
+   "duration_min": 5,
+   "default_start": "12:00",
+   "power_kw": 1.2,
+   "notes": "Helen: 0,2 kWh / 10 min.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "sahkouuni",
+   "name": "Sähköuuni, 1 h paisto 200 °C",
+   "category": "Keittiö",
+   "kind": "cycle",
+   "duration_min": 60,
+   "default_start": "17:00",
+   "energy_kwh": 1.2,
+   "profile": [
+    0.675,
+    0.175,
+    0.175,
+    0.175
+   ],
+   "notes": "Helen: kuumennus 200 °C:een 0,5 kWh + ylläpito 0,7 kWh/h.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "liesi",
+   "name": "Sähköliesi, ateria",
+   "category": "Keittiö",
+   "kind": "cycle",
+   "duration_min": 30,
+   "default_start": "17:00",
+   "energy_kwh": 0.5,
+   "notes": "Helen: 2 hengen talous 0,5 kWh/vrk, 4 hengen 1,0 kWh/vrk.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "induktioliesi",
+   "name": "Induktioliesi, ateria",
+   "category": "Keittiö",
+   "kind": "cycle",
+   "duration_min": 30,
+   "default_start": "17:00",
+   "energy_kwh": 0.45,
+   "notes": "Arvio: n. 10–15 % valurautalevyjä vähemmän.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    },
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "leivanpaahdin",
+   "name": "Leivänpaahdin",
+   "category": "Keittiö",
+   "kind": "power",
+   "duration_min": 3,
+   "default_start": "07:00",
+   "power_kw": 0.6,
+   "notes": "Helen: 0,1 kWh / 10 min.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "jaakaappi",
+   "name": "Jääkaappi",
+   "category": "Kylmälaitteet",
+   "kind": "continuous",
+   "duration_min": 1440,
+   "default_start": null,
+   "annual_kwh": 150,
+   "shiftable": false,
+   "notes": "Helen: 110–329 kWh/v (0,3–0,9 kWh/vrk). Uudet mallit vähemmän.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "pakastin",
+   "name": "Pakastin",
+   "category": "Kylmälaitteet",
+   "kind": "continuous",
+   "duration_min": 1440,
+   "default_start": null,
+   "annual_kwh": 220,
+   "shiftable": false,
+   "notes": "Helen: 183–511 kWh/v.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "jaakaappipakastin",
+   "name": "Jääkaappipakastin",
+   "category": "Kylmälaitteet",
+   "kind": "continuous",
+   "duration_min": 1440,
+   "default_start": null,
+   "annual_kwh": 260,
+   "shiftable": false,
+   "notes": "Helen: 219–694 kWh/v.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "kiuas",
+   "name": "Saunan kiuas (lämmitys + kylpy)",
+   "category": "Sauna ja kylpyhuone",
+   "kind": "cycle",
+   "duration_min": 90,
+   "default_start": "18:00",
+   "energy_kwh": 8.0,
+   "profile": [
+    1.2,
+    1.2,
+    1.2,
+    0.8,
+    0.6,
+    0.5
+   ],
+   "notes": "Helen: saunominen 1,5 h 8 kWh/kerta. Motiva: yli 50 % kuluu esilämmitykseen.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    },
+    {
+     "name": "Motiva: Energiatehokas kodin sauna",
+     "url": "https://www.motiva.fi/tietopankki/energiatehokas-kodin-sauna/"
+    }
+   ]
+  },
+  {
+   "id": "lattialammitys-kph",
+   "name": "Kylpyhuoneen lattialämmitys",
+   "category": "Sauna ja kylpyhuone",
+   "kind": "continuous",
+   "duration_min": 1440,
+   "default_start": null,
+   "annual_kwh": 1100,
+   "shiftable": false,
+   "notes": "Motiva: esimerkkiyksiössä 1 100 kWh/v. Helen: 180–660 kWh/m²/v. Termostaatin oikealla käytöllä jopa 50 % säästö.",
+   "sources": [
+    {
+     "name": "Motiva: Kodin sähkönkäyttö (esimerkkikodit)",
+     "url": "https://www.motiva.fi/kodin-sahkonkaytto-sahkosopimukset-ja-kulutuksen-ohjaus/"
+    },
+    {
+     "name": "Motiva: Mukavuuslattialämmityksen energiatehokas käyttö",
+     "url": "https://www.motiva.fi/tietopankki/kodin-mukavuuslattialammityksen-energiatehokas-kaytto/"
+    },
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "lamminvesivaraaja",
+   "name": "Lämminvesivaraaja (3 hlö)",
+   "category": "Lämmin vesi",
+   "kind": "cycle",
+   "duration_min": 150,
+   "default_start": "02:00",
+   "energy_kwh": 7.5,
+   "notes": "Motiva: 4 hengen talossa lämmin vesi 3 670 kWh/v ≈ 2,5 kWh/hlö/vrk. Varaaja 3 kW lämmittää ajastettuna.",
+   "sources": [
+    {
+     "name": "Motiva: Kodin sähkönkäyttö (esimerkkikodit)",
+     "url": "https://www.motiva.fi/kodin-sahkonkaytto-sahkosopimukset-ja-kulutuksen-ohjaus/"
+    },
+    {
+     "name": "Motiva: Vedenkulutus",
+     "url": "https://www.motiva.fi/vedenkulutus-vedensaasto-ja-vesivuodot/"
+    }
+   ]
+  },
+  {
+   "id": "sahkoauto-11",
+   "name": "Sähköauton lataus 11 kW",
+   "category": "Liikenne",
+   "kind": "power",
+   "duration_min": 120,
+   "default_start": "23:00",
+   "power_kw": 11.0,
+   "notes": "Kulutus n. 15–20 kWh/100 km (talvella +15–30 %), lataushäviöt n. 10 %. Motiva: esimerkkitalossa +2 400 kWh/v.",
+   "sources": [
+    {
+     "name": "Motiva: Kodin sähkönkäyttö (esimerkkikodit)",
+     "url": "https://www.motiva.fi/kodin-sahkonkaytto-sahkosopimukset-ja-kulutuksen-ohjaus/"
+    },
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "sahkoauto-37",
+   "name": "Sähköauton lataus 3,7 kW",
+   "category": "Liikenne",
+   "kind": "power",
+   "duration_min": 360,
+   "default_start": "22:00",
+   "power_kw": 3.7,
+   "notes": "Yksivaiheinen 16 A lataus.",
+   "sources": [
+    {
+     "name": "Motiva: Kodin sähkönkäyttö (esimerkkikodit)",
+     "url": "https://www.motiva.fi/kodin-sahkonkaytto-sahkosopimukset-ja-kulutuksen-ohjaus/"
+    },
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "polynimuri",
+   "name": "Pölynimuri",
+   "category": "Siivous ja muut",
+   "kind": "power",
+   "duration_min": 20,
+   "default_start": "10:00",
+   "power_kw": 0.9,
+   "notes": "Helen: 1,5 kWh/h vanhoilla; uusissa enintään 0,9 kW (EU 666/2013).",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "silitysrauta",
+   "name": "Silitysrauta",
+   "category": "Siivous ja muut",
+   "kind": "power",
+   "duration_min": 30,
+   "default_start": "10:00",
+   "power_kw": 1.0,
+   "notes": "Helen: 1 kWh/h.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "hiustenkuivaaja",
+   "name": "Hiustenkuivaaja",
+   "category": "Siivous ja muut",
+   "kind": "power",
+   "duration_min": 10,
+   "default_start": "07:00",
+   "power_kw": 1.8,
+   "notes": "Arvio: 1,8–2 kW.",
+   "sources": [
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "televisio",
+   "name": "Televisio",
+   "category": "Viihde",
+   "kind": "power",
+   "duration_min": 180,
+   "default_start": "19:00",
+   "power_kw": 0.1,
+   "notes": "Helen: 0,05–0,20 kWh/h (32–50\" LCD); uudet LED-mallit vähemmän.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "tietokone",
+   "name": "Pöytätietokone / pelikone",
+   "category": "Viihde",
+   "kind": "power",
+   "duration_min": 120,
+   "default_start": "19:00",
+   "power_kw": 0.25,
+   "notes": "Helen: 0,14–0,50 kWh/h; kannettava 0,04 kWh/h.",
+   "sources": [
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "ilmanvaihto",
+   "name": "Ilmanvaihto ja talotekniikka",
+   "category": "Talotekniikka",
+   "kind": "continuous",
+   "duration_min": 1440,
+   "default_start": null,
+   "annual_kwh": 800,
+   "shiftable": false,
+   "notes": "Motiva: omakotitalossa tekniikka ja ilmanvaihto 800 kWh/v. Helen: huoneistokohtainen ilmanvaihto 1 080–1 800 kWh/v.",
+   "sources": [
+    {
+     "name": "Motiva: Kodin sähkönkäyttö (esimerkkikodit)",
+     "url": "https://www.motiva.fi/kodin-sahkonkaytto-sahkosopimukset-ja-kulutuksen-ohjaus/"
+    },
+    {
+     "name": "Helen: Sähkölaitteiden kulutuslukuja (2017)",
+     "url": "https://www.helen.fi/globalassets/asiakaspalvelu/kodit/energiankayton-neuvonta/kulutusluvut/kulutusluvut-2017.pdf"
+    }
+   ]
+  },
+  {
+   "id": "valaistus",
+   "name": "Valaistus (LED, omakotitalo)",
+   "category": "Talotekniikka",
+   "kind": "continuous",
+   "duration_min": 1440,
+   "default_start": null,
+   "annual_kwh": 450,
+   "shiftable": false,
+   "notes": "Motiva: omakotitalo 450 kWh/v, kerrostaloasunto 240 kWh/v. Jaettu tasaisesti vuorokaudelle.",
+   "sources": [
+    {
+     "name": "Motiva: Kodin sähkönkäyttö (esimerkkikodit)",
+     "url": "https://www.motiva.fi/kodin-sahkonkaytto-sahkosopimukset-ja-kulutuksen-ohjaus/"
+    }
+   ]
+  }
+ ],
+ "heating_systems": [
+  {
+   "id": "suora",
+   "name": "Suora sähkölämmitys (patterit)",
+   "cop_curve": [
+    [
+     0,
+     1
+    ]
+   ],
+   "coverage": 1.0,
+   "min_temp": null,
+   "notes": "Hyötysuhde 1.",
+   "sources": []
+  },
+  {
+   "id": "lattia",
+   "name": "Sähköinen lattialämmitys (koko talo)",
+   "cop_curve": [
+    [
+     0,
+     1
+    ]
+   ],
+   "coverage": 1.0,
+   "min_temp": null,
+   "notes": "Hyötysuhde 1. Lattian massa tasaa kulutusta tuntien yli.",
+   "sources": []
+  },
+  {
+   "id": "varaava",
+   "name": "Varaava sähkölämmitys",
+   "cop_curve": [
+    [
+     0,
+     1
+    ]
+   ],
+   "coverage": 1.0,
+   "min_temp": null,
+   "notes": "Hyötysuhde 1. Lataus yleensä yöllä; kulutus näytetään tässä lämmitystarpeen mukaan.",
+   "sources": []
+  },
+  {
+   "id": "ilp",
+   "name": "Ilmalämpöpumppu + suora sähkö",
+   "cop_curve": [
+    [
+     -25,
+     1.4
+    ],
+    [
+     -20,
+     1.7
+    ],
+    [
+     -15,
+     2.0
+    ],
+    [
+     -7,
+     2.6
+    ],
+    [
+     0,
+     3.3
+    ],
+    [
+     7,
+     4.5
+    ],
+    [
+     15,
+     5.0
+    ]
+   ],
+   "coverage": 0.5,
+   "min_temp": -25,
+   "notes": "Motiva: ILP kattaa 30–60 % huonelämmityksestä, lämpökerroin puolittuu kovilla pakkasilla, hyödyllinen n. -25 °C:een. Loput suoralla sähköllä. COP-käyrä on arvio; VTT:n keskimääräinen vuosilämpökerroin 2,5.",
+   "sources": [
+    {
+     "name": "Motiva: Ilmalämpöpumppu",
+     "url": "https://www.motiva.fi/tietopankki/ilmalampopumppu/"
+    },
+    {
+     "name": "VTT T164 (2014): lämpöpumppujen vuosilämpökertoimet",
+     "url": "https://sarjaweb.vtt.fi/pdf/technology/2014/T164.pdf"
+    },
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "ivlp",
+   "name": "Ilma-vesilämpöpumppu",
+   "cop_curve": [
+    [
+     -25,
+     1.3
+    ],
+    [
+     -20,
+     1.6
+    ],
+    [
+     -15,
+     1.9
+    ],
+    [
+     -7,
+     2.4
+    ],
+    [
+     0,
+     3.0
+    ],
+    [
+     7,
+     4.0
+    ],
+    [
+     15,
+     4.5
+    ]
+   ],
+   "coverage": 0.95,
+   "min_temp": -25,
+   "notes": "Motiva: lämpökerroin ja teho heikkenevät selvästi -15…-30 °C:ssa. COP-käyrä (vesi 35 °C) on arvio; VTT:n keskimääräinen vuosilämpökerroin 2,5.",
+   "sources": [
+    {
+     "name": "Motiva: Ilma-vesilämpöpumppu",
+     "url": "https://www.motiva.fi/tietopankki/ilma-vesilampopumppu/"
+    },
+    {
+     "name": "VTT T164 (2014): lämpöpumppujen vuosilämpökertoimet",
+     "url": "https://sarjaweb.vtt.fi/pdf/technology/2014/T164.pdf"
+    },
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "mlp",
+   "name": "Maalämpöpumppu",
+   "cop_curve": [
+    [
+     -30,
+     3.3
+    ],
+    [
+     0,
+     3.5
+    ],
+    [
+     15,
+     3.6
+    ]
+   ],
+   "coverage": 0.97,
+   "min_temp": null,
+   "notes": "Motiva: mitoitettuna 60–80 % tehosta kattaa 95–99 % vuosienergiasta. Lämpökerroin lähes vakio; VTT:n keskimääräinen vuosilämpökerroin 3,5.",
+   "sources": [
+    {
+     "name": "Motiva: Maalämpöpumppu",
+     "url": "https://www.motiva.fi/tietopankki/maalampopumppu/"
+    },
+    {
+     "name": "VTT T164 (2014): lämpöpumppujen vuosilämpökertoimet",
+     "url": "https://sarjaweb.vtt.fi/pdf/technology/2014/T164.pdf"
+    }
+   ]
+  }
+ ],
+ "building_eras": [
+  {
+   "id": "ennen-1960",
+   "label": "ennen 1960",
+   "kwh_m2_a": 210,
+   "sources": [
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "1960-1975",
+   "label": "1960–1975",
+   "kwh_m2_a": 240,
+   "sources": [
+    {
+     "name": "Ympäristöministeriö: korjausrakentamisen strategia (1960-luku 240, 2010-luku 85 kWh/m²)",
+     "url": "https://peda.net/id/5ca2beecd98:file/download/9b3eb2be0bcb3c5a6f157b15183cde188b9ac4f0/3Rakennusten%20energiatehokkuus.pdf"
+    }
+   ]
+  },
+  {
+   "id": "1976-1985",
+   "label": "1976–1985",
+   "kwh_m2_a": 180,
+   "sources": [
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "1986-2002",
+   "label": "1986–2002",
+   "kwh_m2_a": 140,
+   "sources": [
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "2003-2009",
+   "label": "2003–2009",
+   "kwh_m2_a": 110,
+   "sources": [
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "2010-2017",
+   "label": "2010–2017",
+   "kwh_m2_a": 85,
+   "sources": [
+    {
+     "name": "Ympäristöministeriö: korjausrakentamisen strategia (1960-luku 240, 2010-luku 85 kWh/m²)",
+     "url": "https://peda.net/id/5ca2beecd98:file/download/9b3eb2be0bcb3c5a6f157b15183cde188b9ac4f0/3Rakennusten%20energiatehokkuus.pdf"
+    }
+   ]
+  },
+  {
+   "id": "2018-",
+   "label": "2018 tai uudempi",
+   "kwh_m2_a": 60,
+   "sources": [
+    {
+     "name": "Arvio (ei vahvistettu lähteestä)",
+     "url": null
+    }
+   ]
+  }
+ ],
+ "locations": [
+  {
+   "id": "helsinki",
+   "name": "Helsinki",
+   "fmi_place": "Helsinki",
+   "lat": 60.17,
+   "lon": 24.94,
+   "degree_days": 3689,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "espoo",
+   "name": "Espoo",
+   "fmi_place": "Espoo",
+   "lat": 60.21,
+   "lon": 24.66,
+   "degree_days": 3689,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    },
+    {
+     "name": "Helsinki Kaisaniemen arvo",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "vantaa",
+   "name": "Vantaa",
+   "fmi_place": "Vantaa",
+   "lat": 60.29,
+   "lon": 25.04,
+   "degree_days": 3895,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "turku",
+   "name": "Turku",
+   "fmi_place": "Turku",
+   "lat": 60.45,
+   "lon": 22.27,
+   "degree_days": 3871,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "pori",
+   "name": "Pori",
+   "fmi_place": "Pori",
+   "lat": 61.48,
+   "lon": 21.8,
+   "degree_days": 3976,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "tampere",
+   "name": "Tampere",
+   "fmi_place": "Tampere",
+   "lat": 61.5,
+   "lon": 23.76,
+   "degree_days": 4233,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "lahti",
+   "name": "Lahti",
+   "fmi_place": "Lahti",
+   "lat": 60.98,
+   "lon": 25.66,
+   "degree_days": 4238,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "lappeenranta",
+   "name": "Lappeenranta",
+   "fmi_place": "Lappeenranta",
+   "lat": 61.06,
+   "lon": 28.19,
+   "degree_days": 4303,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "vaasa",
+   "name": "Vaasa",
+   "fmi_place": "Vaasa",
+   "lat": 63.1,
+   "lon": 21.62,
+   "degree_days": 4276,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "jyvaskyla",
+   "name": "Jyväskylä",
+   "fmi_place": "Jyväskylä",
+   "lat": 62.24,
+   "lon": 25.75,
+   "degree_days": 4622,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "kuopio",
+   "name": "Kuopio",
+   "fmi_place": "Kuopio",
+   "lat": 62.89,
+   "lon": 27.68,
+   "degree_days": 4607,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "joensuu",
+   "name": "Joensuu",
+   "fmi_place": "Joensuu",
+   "lat": 62.6,
+   "lon": 29.76,
+   "degree_days": 4755,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "oulu",
+   "name": "Oulu",
+   "fmi_place": "Oulu",
+   "lat": 65.01,
+   "lon": 25.47,
+   "degree_days": 4834,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "kajaani",
+   "name": "Kajaani",
+   "fmi_place": "Kajaani",
+   "lat": 64.23,
+   "lon": 27.73,
+   "degree_days": 5075,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "rovaniemi",
+   "name": "Rovaniemi",
+   "fmi_place": "Rovaniemi",
+   "lat": 66.5,
+   "lon": 25.73,
+   "degree_days": 5600,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    },
+    {
+     "name": "Arvio: Rovaniemellä ei omaa asemaa tiedostossa (Sodankylä 5924)",
+     "url": null
+    }
+   ]
+  },
+  {
+   "id": "sodankyla",
+   "name": "Sodankylä",
+   "fmi_place": "Sodankylä",
+   "lat": 67.42,
+   "lon": 26.59,
+   "degree_days": 5924,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "ivalo",
+   "name": "Ivalo",
+   "fmi_place": "Ivalo",
+   "lat": 68.66,
+   "lon": 27.55,
+   "degree_days": 5996,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  },
+  {
+   "id": "maarianhamina",
+   "name": "Maarianhamina",
+   "fmi_place": "Maarianhamina",
+   "lat": 60.1,
+   "lon": 19.94,
+   "degree_days": 3630,
+   "sources": [
+    {
+     "name": "Ilmatieteen laitos: lämmitystarveluvut 1991–2020",
+     "url": "https://cdn.fmi.fi/documents/climate/wau2020/heatingdegreedays_1991-2020.csv"
+    }
+   ]
+  }
+ ]
+}

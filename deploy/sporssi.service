@@ -1,0 +1,15 @@
+# /etc/systemd/system/sporssi.service
+[Unit]
+Description=Sporssi API (Flask + gunicorn)
+After=network-online.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/sporssi/server
+EnvironmentFile=-/etc/sporssi.env
+ExecStart=/opt/sporssi/.venv/bin/gunicorn --workers 2 --bind 127.0.0.1:8050 wsgi:app
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

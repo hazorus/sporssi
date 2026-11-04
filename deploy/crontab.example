@@ -1,0 +1,5 @@
+# crontab -u www-data -e
+# Hinnat ja säät: 15 min välein iltapäivällä (huomisen hinnat ~13.45), muuten tunneittain.
+SPORSSI_DB=/var/lib/sporssi/sporssi.sqlite3
+*/15 13-16 * * * cd /opt/sporssi/server && . /etc/sporssi.env 2>/dev/null; /opt/sporssi/.venv/bin/python -m sporssi.cli update --locations helsinki,tampere,oulu >/dev/null
+7 * * * *        cd /opt/sporssi/server && . /etc/sporssi.env 2>/dev/null; /opt/sporssi/.venv/bin/python -m sporssi.cli update --locations helsinki,tampere,oulu >/dev/null
