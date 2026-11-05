@@ -187,7 +187,7 @@
         <div class="stat"><span class="muted small">Halvin</span><b class="big">{fmtPrice(summary.min.v)}</b><span class="small muted">klo {hhmm(summary.min.t)}</span></div>
         <div class="stat"><span class="muted small">Kallein</span><b class="big">{fmtPrice(summary.max.v)}</b><span class="small muted">klo {hhmm(summary.max.t)}</span></div>
         {#if stats}
-          <div class="stat"><span class="muted small">12 kk keskihinta</span><b class="big">{fmtPrice(userPrice(stats.mean, settings))}</b><span class="small muted">hajonta ± {fmtPrice(stats.std)} (ALV 0)</span></div>
+          <div class="stat"><span class="muted small">{stats.coverage < 0.9 ? `Keskihinta (${Math.round(stats.slots / 96)} vrk)` : '12 kk keskihinta'}</span><b class="big">{fmtPrice(userPrice(stats.mean, settings))}</b><span class="small muted">hajonta ± {fmtPrice(stats.std)} (ALV 0)</span></div>
         {/if}
       </div>
     {:else if tomorrowPending}
@@ -198,6 +198,10 @@
       <p class="muted">Ladataan…</p>
     {/if}
 
+    {#if summary && stats && stats.coverage < 0.9}
+      <p class="small warn">Tietokannassa on hintahistoriaa vain {Math.round(stats.slots / 96)} vuorokaudelta, joten
+        värialueet eivät vielä kuvaa vuoden tasoa. Ylläpitäjä: aja <code>python -m sporssi.cli backfill --days 400</code>.</p>
+    {/if}
     {#if summary}
       <PriceChart rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit} />
       <div class="row small legend">
@@ -247,4 +251,5 @@
   .legend { gap: 1rem; margin: .2rem 0 .6rem; }
   .table-toggle summary { font-weight: 600; margin: .4rem 0; }
   footer { padding: 0 .2rem 2rem; }
+  .warn { border-left: 3px solid var(--yellow); padding: .3rem .6rem; background: var(--row-alt); }
 </style>
