@@ -8,3 +8,12 @@
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>
+
+# Suojaus siltä varalta, että palvelinpuolen tiedostoja päätyy tähän hakemistoon:
+# tietokanta, asetukset (ENTSO-E-token), Python-koodi ja lähdekoodi eivät saa näkyä verkkoon.
+# Paras ratkaisu on pitää repo verkkohakemiston ulkopuolella ja kopioida tänne vain web/dist.
+<IfModule mod_alias.c>
+  RedirectMatch 404 "(?i)\.(sqlite3?|db|env|py|pyc|md|toml|ini|cfg|conf|service|example|lock|sh)(-wal|-shm|-journal)?$"
+  RedirectMatch 404 "/(server|data|var|scripts|deploy|web|tests|node_modules|\.venv|\.git)(/|$)"
+  RedirectMatch 404 "/(requirements[^/]*\.txt|package(-lock)?\.json)$"
+</IfModule>
