@@ -67,6 +67,24 @@ def create_app(config=None):
             "slots": slots,
         })
 
+    @app.get("/api/health")
+    def api_health():
+        conn = get_db()
+        n_prices = conn.execute("SELECT COUNT(*) FROM prices").fetchone()[0]
+        n_devices = conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0]
+        last = conn.execute("SELECT kind, target, status, detail, at FROM fetch_log "
+                            "ORDER BY id DESC LIMIT 5").fetchall()
+        return jsonify({
+            "ok": True,
+            "price_source": cfg.price_source,
+            "entsoe_token": bool(cfg.entsoe_token),
+            "db": cfg.db_path,
+            "prices_rows": n_prices,
+            "devices": n_devices,
+            "available": prices.available_days(conn, cfg.area),
+            "recent_fetches": [dict(r) for r in last],
+        })
+
     @app.get("/api/stats")
     def api_stats():
         days = min(max(int(request.args.get("days", 365)), 7), 3660)

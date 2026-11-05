@@ -141,7 +141,10 @@ cd web && npm test
    kirjoitusoikeus tietokannan hakemistoon, esim. `/var/lib/sporssi`.
 3. Hae historia kerran: `python -m sporssi.cli backfill --days 400` (hakemistossa `server/`).
 4. Käynnistä rajapinta: `deploy/sporssi.service` (gunicorn, 127.0.0.1:8050). Vaihtoehtoisesti
-   `deploy/apache-sporssi-wsgi.conf` (mod_wsgi).
+   `deploy/apache-sporssi-wsgi.conf` (mod_wsgi). mod_wsgi:n kanssa asetukset annetaan tiedostossa
+   `/etc/sporssi.env` (Apachen `SetEnv` ei välity sovellukselle), ja koodipäivityksen jälkeen
+   `sudo touch /opt/sporssi/server/wsgi.py`. Toiminnan voi tarkistaa osoitteesta `.../api/health`;
+   jos rajapinta ei käynnisty, sama osoite kertoo virheen syyn JSON-muodossa.
 5. Ajasta haku: `deploy/crontab.example`. Rajapinta hakee puuttuvat tiedot myös pyynnön
    yhteydessä (`SPORSSI_LAZY_FETCH=1`), mutta ajastus pitää tiedot valmiina.
 6. Käännä käyttöliittymä ja kopioi se Apachen hakemistoon:
