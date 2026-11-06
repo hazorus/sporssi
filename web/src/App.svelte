@@ -16,6 +16,7 @@
   import Heating from './components/Heating.svelte';
   import Settings from './components/Settings.svelte';
   import NowCosts from './components/NowCosts.svelte';
+  import ShareChart from './components/ShareChart.svelte';
   import InstallButton from './components/InstallButton.svelte';
 
   const DEFAULT_HEATING = {
@@ -279,6 +280,27 @@
   });
 
   // Lämmityksen ja lämpimän veden tuntikustannukset lämmitysosion kaaviota varten.
+  // Kulutusjakauma: sama data kuin kustannustaulukossa, mutta kodinkoneet laitteittain.
+  // Vain valitun vuorokauden sisällä oleva kulutus (yli puolenyön jatkuva käyttö ei mukana).
+  const shareParts = $derived.by(() => {
+    const waterEntry = tableDevices.find((d) => d.key === 'water');
+    const res = schedule(daySlots, [...scheduled, ...(waterEntry ? [waterEntry] : [])], priceAt, heatExtra);
+    const sums = {};
+    let heatingUnknown = false;
+    for (const r of res.rows) {
+      for (const [k, c] of Object.entries(r.cells)) {
+        if (c.kwh === null) { if (k === 'heating') heatingUnknown = true; continue; }
+        const acc = (sums[k] ??= { kwh: 0, eur: 0 });
+        acc.kwh += c.kwh;
+        acc.eur += c.eur ?? 0;
+      }
+    }
+    const parts = scheduled.map((s) => ({ key: s.key, name: s.dev.name, group: 'appliance', ...(sums[s.key] ?? { kwh: 0, eur: 0 }) }));
+    parts.push({ key: 'water', name: waterDistrict ? 'Lämmin vesi (kaukolämpö)' : 'Lämmin vesi', group: 'water', ...(sums.water ?? { kwh: 0, eur: 0 }) });
+    parts.push({ key: 'heating', name: district ? 'Rakennuksen lämmitys (kaukolämpö)' : 'Rakennuksen lämmitys', group: 'heating', ...(sums.heating ?? { kwh: 0, eur: 0 }) });
+    return { parts, heatingUnknown };
+  });
+
   const heatCostHours = $derived.by(() => {
     const waterEntry = tableDevices.find((d) => d.key === 'water');
     const res = schedule(daySlots, waterEntry ? [waterEntry] : [], priceAt, heatExtra);
@@ -413,6 +435,13 @@
         energiamaksulla {fmtPrice(Number(heatCfg.dhPrice))} c/kWh (perusmaksu ei sisälly). Ne eivät kuluta sähköä.</p>
     {/if}
     <CostTable {daySlots} columns={tableColumns} devices={tableDevices} extra={heatExtra} {priceAt} resolution={settings.resolution} {nowMs} {unit} />
+  </section>
+
+  <section class="card" aria-labelledby="jakauma-otsikko">
+    <h2 id="jakauma-otsikko">Vuorokauden kulutusjakauma</h2>
+    <ShareChart parts={shareParts.parts} {scheme}
+      note={(shareParts.heatingUnknown ? 'Osalta tunneista puuttuu säätieto, joten lämmityksen osuus voi olla todellista pienempi. ' : '')
+        + (district || waterDistrict ? 'Kaukolämmön osuus on lämpöenergiaa, ei sähköä.' : '')} />
   </section>
 
   </main>
