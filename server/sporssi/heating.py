@@ -9,6 +9,8 @@ laitteet, aurinko) kattaa lämmityksen 21 °C:n ja 17 °C:n välillä.
 """
 
 import json
+import math
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -23,11 +25,52 @@ def _loads(text, default=None):
     return json.loads(text) if text else default
 
 
+GEO_RE = re.compile(r"^geo:(-?\d{1,2}(?:\.\d{1,2})?),(-?\d{1,3}(?:\.\d{1,2})?)$")
+# Suomi ja lähialueet: lämmitystarveluvut ovat suomalaisille paikkakunnille.
+GEO_BOUNDS = (58.5, 70.5, 18.0, 32.5)
+
+
+def _km(lat1, lon1, lat2, lon2):
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = p2 - p1, math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 6371 * 2 * math.asin(math.sqrt(a))
+
+
+def geo_location(conn, lat, lon):
+    """Käyttäjän sijainti: sää haetaan koordinaateille, lämmitystarveluku lähimmältä
+    vertailupaikkakunnalta. Koordinaatit pyöristetään 0,1 asteeseen (n. 5–11 km)."""
+    lat, lon = round(float(lat), 1), round(float(lon), 1)
+    lo_lat, hi_lat, lo_lon, hi_lon = GEO_BOUNDS
+    if not (lo_lat <= lat <= hi_lat and lo_lon <= lon <= hi_lon):
+        raise ValueError("Sijainti on Suomen ulkopuolella")
+    refs = conn.execute("SELECT * FROM locations").fetchall()
+    nearest = min(refs, key=lambda r: _km(lat, lon, r["lat"], r["lon"]))
+    return {
+        "id": f"geo:{lat:.1f},{lon:.1f}",
+        "name": "Oma sijainti",
+        "fmi_place": None,
+        "lat": lat,
+        "lon": lon,
+        "degree_days": nearest["degree_days"],
+        "nearest_id": nearest["id"],
+        "nearest_name": nearest["name"],
+        "nearest_km": round(_km(lat, lon, nearest["lat"], nearest["lon"])),
+    }
+
+
 def get_location(conn, location_id):
+    m = GEO_RE.match(location_id or "")
+    if m:
+        return geo_location(conn, m.group(1), m.group(2))
     row = conn.execute("SELECT * FROM locations WHERE id = ?", (location_id,)).fetchone()
     if not row:
         raise KeyError(location_id)
-    return row
+    return dict(row)
+
+
+def _where(location):
+    return {"lat": location["lat"], "lon": location["lon"]} if not location["fmi_place"] else {}
 
 
 def refresh_weather(conn, location, now=None, past_hours=48, forecast_days=10):
@@ -36,9 +79,11 @@ def refresh_weather(conn, location, now=None, past_hours=48, forecast_days=10):
     now_ts -= now_ts % 3600
     target = location["id"]
     try:
-        obs = fmi.fetch_observations(location["fmi_place"], now_ts - past_hours * 3600, now_ts + 3600)
+        obs = fmi.fetch_observations(location["fmi_place"], now_ts - past_hours * 3600, now_ts + 3600,
+                                     **_where(location))
         db.upsert_weather(conn, location["id"], "obs", obs)
-        fc = fmi.fetch_forecast(location["fmi_place"], now_ts, now_ts + forecast_days * 86400)
+        fc = fmi.fetch_forecast(location["fmi_place"], now_ts, now_ts + forecast_days * 86400,
+                                **_where(location))
         db.upsert_weather(conn, location["id"], "fc", fc)
         db.log_fetch(conn, "weather", target, "fmi", "ok", f"obs {len(obs)}, fc {len(fc)}")
     except Exception as exc:
@@ -50,7 +95,7 @@ def fetch_past_day(conn, location, day):
     start, end = local_day_bounds(day)
     target = f"{location['id']}:{day.isoformat()}"
     try:
-        obs = fmi.fetch_observations(location["fmi_place"], start, end)
+        obs = fmi.fetch_observations(location["fmi_place"], start, end, **_where(location))
         db.upsert_weather(conn, location["id"], "obs", obs)
         db.log_fetch(conn, "weather", target, "fmi", "ok", f"obs {len(obs)}")
     except Exception as exc:
@@ -121,7 +166,7 @@ def electricity_for_hour(system, heat_kwh, temp):
 
 def estimate_day(conn, day, location_id, system_id, area_m2=None, era_id=None,
                  annual_heat_kwh=None, indoor_temp=21.0):
-    location = get_location(conn, location_id)
+    location = location_id if isinstance(location_id, dict) else get_location(conn, location_id)
     system = conn.execute("SELECT * FROM heating_systems WHERE id = ?", (system_id,)).fetchone()
     if not system:
         raise KeyError(system_id)
@@ -132,7 +177,7 @@ def estimate_day(conn, day, location_id, system_id, area_m2=None, era_id=None,
         annual_heat_kwh = era["kwh_m2_a"] * float(area_m2)
     h = heat_loss_coefficient(float(annual_heat_kwh), location["degree_days"])
     base = 17.0 + (float(indoor_temp) - 21.0)
-    temps = hourly_temperatures(conn, location_id, day)
+    temps = hourly_temperatures(conn, location["id"], day)
     start, end = local_day_bounds(day)
     hours = []
     total_heat = total_elec = 0.0
@@ -152,6 +197,10 @@ def estimate_day(conn, day, location_id, system_id, area_m2=None, era_id=None,
     return {
         "date": day.isoformat(),
         "location": location["id"],
+        "location_name": location["name"],
+        "degree_days": location["degree_days"],
+        "nearest_name": location.get("nearest_name"),
+        "nearest_km": location.get("nearest_km"),
         "system": system["id"],
         "annual_heat_kwh": round(float(annual_heat_kwh)),
         "heat_loss_kwh_per_kh": round(h, 4),
@@ -164,7 +213,7 @@ def estimate_day(conn, day, location_id, system_id, area_m2=None, era_id=None,
 
 
 def weather_day(conn, location_id, day):
-    temps = hourly_temperatures(conn, location_id, day)
+    temps = hourly_temperatures(conn, location["id"], day)
     start, end = local_day_bounds(day)
     return [
         {"start": iso_utc(t), "temp": temps[t][0] if t in temps else None,

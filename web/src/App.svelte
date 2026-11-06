@@ -23,6 +23,8 @@
     persons: 3, waterPerPerson: 2.5, waterMode: 'varaaja', waterStart: '02:00', waterPower: 3,
     // Kaukolämmön energiamaksu c/kWh sis. ALV (perusmaksu ei mukana). Tarkista oma hinta lämpöyhtiöltä.
     dhPrice: 10,
+    // Selaimen sijainti pyöristettynä 0,1 asteeseen, esim. "geo:60.2,24.9"; geoAsked: granted|denied
+    geo: null, geoAsked: null,
   };
 
   let settings = $state(load('sporssi.settings', DEFAULT_SETTINGS));
@@ -75,7 +77,40 @@
     }
   }
 
+  // Sijainti: kysytään ensikäynnillä. Jos lupa on jo annettu, sijainti päivitetään hiljaa.
+  let geoStatus = $state('');
+  function locate(manual = false) {
+    if (!('geolocation' in navigator)) {
+      if (manual) geoStatus = 'Selain ei tue sijaintia.';
+      return;
+    }
+    geoStatus = manual ? 'Haetaan sijaintia…' : '';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = Math.round(pos.coords.latitude * 10) / 10;
+        const lon = Math.round(pos.coords.longitude * 10) / 10;
+        const id = `geo:${lat.toFixed(1)},${lon.toFixed(1)}`;
+        const wasGeo = !heatCfg.location || heatCfg.location.startsWith('geo:');
+        heatCfg.geo = id;
+        if (manual || heatCfg.geoAsked !== 'granted' || wasGeo) heatCfg.location = id;
+        heatCfg.geoAsked = 'granted';
+        geoStatus = '';
+      },
+      (err) => {
+        heatCfg.geoAsked = 'denied';
+        if (heatCfg.location?.startsWith('geo:')) heatCfg.location = 'helsinki';
+        geoStatus = manual
+          ? (err.code === err.PERMISSION_DENIED
+            ? 'Sijainnin käyttö on estetty. Salli se selaimen osoiterivin asetuksista ja yritä uudelleen.'
+            : 'Sijaintia ei saatu.')
+          : '';
+      },
+      { enableHighAccuracy: false, maximumAge: 3600000, timeout: 20000 },
+    );
+  }
+
   onMount(() => {
+    if (heatCfg.geoAsked !== 'denied') locate(false);
     api.stats().then((r) => { stats = r.stats; available = r.available; }).catch(() => {});
     api.devices().then((r) => { catalog = r; }).catch((e) => { loadError = `Laitteiden haku epäonnistui: ${e.message}`; });
     api.heatingOptions().then((r) => { heatOptions = r; }).catch(() => {});
@@ -316,7 +351,7 @@
 
   <section class="card">
     <h2>Rakennuksen lämmitys ja lämmin vesi</h2>
-    <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} costHours={heatCostHours} />
+    <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} costHours={heatCostHours} {geoStatus} onlocate={() => locate(true)} />
   </section>
 
   <section class="card">

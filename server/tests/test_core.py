@@ -105,3 +105,36 @@ def test_api(tmp_path):
     assert c.get("/api/prices?date=xx").status_code == 400
     assert c.get("/api/stats").get_json()["stats"] is None
     assert c.get("/api/heating?system=ilp").status_code == 400
+
+
+def test_geo_location_nearest_and_bounds(conn):
+    loc = heating.get_location(conn, "geo:60.21,24.66")
+    assert loc["id"] == "geo:60.2,24.7"
+    assert loc["nearest_id"] == "espoo" and loc["degree_days"] == 3689
+    with pytest.raises(ValueError):
+        heating.get_location(conn, "geo:48.9,2.3")
+    with pytest.raises(KeyError):
+        heating.get_location(conn, "geo:abc")
+
+
+def test_nearest_station_series():
+    rows = [((60.0, 25.0), 1, 1.0), ((60.2, 24.7), 1, 2.0), ((60.2, 24.7), 2, 3.0)]
+    assert fmi.nearest_station_series(rows, 60.21, 24.66) == [(1, 2.0), (2, 3.0)]
+
+
+def test_heating_geo_estimate(conn):
+    day = date(2026, 11, 4)
+    start, end = local_day_bounds(day)
+    db.upsert_weather(conn, "geo:62.6,29.8", "fc", [(t, 0.0) for t in range(start, end, 3600)])
+    r = heating.estimate_day(conn, day, "geo:62.6,29.8", "suora", annual_heat_kwh=4755 * 24)
+    assert r["nearest_name"] == "Joensuu" and r["total_heat_kwh"] == pytest.approx(17 * 24)
+
+
+def test_api_heating_geo(tmp_path):
+    app = create_app(Config(db_path=str(tmp_path / "g.sqlite3"), lazy_fetch=False))
+    c = app.test_client()
+    r = c.get("/api/heating?date=2026-11-04&location=geo:61.45,23.86&system=suora&annual_kwh=10000")
+    assert r.status_code == 200, r.get_json()
+    d = r.get_json()
+    assert d["location"] == "geo:61.5,23.9" and d["nearest_name"] == "Tampere"
+    assert c.get("/api/heating?location=geo:40.0,10.0&system=suora&annual_kwh=1").status_code == 400

@@ -3,7 +3,8 @@
   import echarts from '../lib/echarts.js';
   import { hhmm, fmtKwh, fmtPrice, fmtEur } from '../lib/pricing.js';
 
-  let { options, cfg = $bindable(), data, error, loading, water, costHours = [] } = $props();
+  let { options, cfg = $bindable(), data, error, loading, water, costHours = [], geoStatus = '', onlocate } = $props();
+  const canLocate = typeof navigator !== 'undefined' && 'geolocation' in navigator;
   const costByHour = $derived(new Map(costHours.map((c) => [c.t, c])));
   const dayCost = $derived.by(() => {
     let heating = 0, water = 0, unknown = false;
@@ -28,7 +29,8 @@
     else if (prevSystem === DISTRICT && cfg.waterMode === DISTRICT) cfg.waterMode = 'varaaja';
     prevSystem = s;
   });
-  const location = $derived(options?.locations.find((l) => l.id === cfg.location));
+  const isGeo = $derived(cfg.location?.startsWith('geo:'));
+  const location = $derived(isGeo ? null : options?.locations.find((l) => l.id === cfg.location));
   const era = $derived(options?.eras.find((e) => e.id === cfg.era));
 
   function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
@@ -94,9 +96,13 @@
   <div class="row controls">
     <label class="field">Paikkakunta
       <select bind:value={cfg.location}>
+        {#if cfg.geo}<option value={cfg.geo}>📍 Oma sijainti</option>{/if}
         {#each options.locations as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
       </select>
     </label>
+    {#if canLocate}
+      <button type="button" class="locate" onclick={() => onlocate?.()} title="Hae sijainti selaimelta">📍 Käytä sijaintiani</button>
+    {/if}
     <label class="field">Lämmitystapa
       <select bind:value={cfg.system}>
         {#each options.systems as s (s.id)}<option value={s.id}>{s.name}</option>{/each}
@@ -126,6 +132,11 @@
     <label class="field">Sisälämpö, °C <input type="number" min="15" max="26" step="0.5" bind:value={cfg.indoor} /></label>
   </div>
 
+  {#if geoStatus}<p class="small muted">{geoStatus}</p>{/if}
+  {#if isGeo}
+    <p class="small muted">Säätiedot haetaan sijaintisi lähimmältä sääasemalta ja ennuste sijaintiisi.
+      Sijainti pyöristetään noin 10 km tarkkuuteen ennen kuin se lähetetään palvelimelle, eikä sitä käytetä muuhun.</p>
+  {/if}
   {#if error}<p class="error small">{error}</p>{/if}
   {#if data}
     <p class="small">
@@ -138,7 +149,7 @@
         Arvioitu lämmityssähkö: <b>{fmtKwh(data.total_elec_kwh)} kWh</b> (lämpöenergiaa {fmtKwh(data.total_heat_kwh)} kWh).
       {/if}
       Vuotuinen lämmitystarve {data.annual_heat_kwh.toLocaleString('fi-FI')} kWh,
-      lämmitystarveluku {location?.degree_days.toLocaleString('fi-FI')} °Cd.
+      lämmitystarveluku {(data.degree_days ?? location?.degree_days)?.toLocaleString('fi-FI')} °Cd{#if data.nearest_name}{' '}(lähin vertailupaikkakunta {data.nearest_name}, {data.nearest_km} km){/if}.
       {#if !data.complete}<span class="pill">osa tunneista ilman säätietoa</span>{/if}
       {#if loading}<span class="muted">päivitetään…</span>{/if}
     </p>
@@ -193,6 +204,7 @@
 
 <style>
   .controls { margin: .6rem 0; align-items: flex-end; }
+  .locate { white-space: nowrap; }
   .chart { width: 100%; height: 240px; }
   h3.water { margin-top: 1rem; }
 </style>

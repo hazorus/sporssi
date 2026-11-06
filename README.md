@@ -79,6 +79,12 @@ välittää samat Nord Poolin hinnat (€/MWh, ALV 0). Lähteen voi pakottaa:
 4. Aseta token palvelimelle, esim. `/etc/sporssi.env`: `ENTSOE_TOKEN=...`. Käynnistä palvelu
    uudelleen. Lähde vaihtuu automaattisesti, eikä vanhoja tietoja tarvitse hakea uudelleen.
 
+**Sijainti.** Ensikäynnillä sivu pyytää selaimelta sijaintia. Jos käyttäjä sallii sen, sijainti
+pyöristetään 0,1 asteeseen (n. 10 km) jo selaimessa ja sitä käytetään säätietojen hakuun:
+havainnot lähimmältä sääasemalta, ennuste suoraan pisteeseen. Lämmitystarveluku otetaan lähimmältä
+vertailupaikkakunnalta. Jos lupaa ei anneta, käytetään valittua paikkakuntaa eikä kysytä uudelleen
+(painike "Käytä sijaintiani" kysyy uudelleen).
+
 **Sää.** Ilmatieteen laitoksen avoin data (opendata.fmi.fi, ei avainta):
 - havainnot `fmi::observations::weather::simple`
 - ennuste `fmi::forecast::edited::weather::scandinavia::point::simple`, n. 10 vrk

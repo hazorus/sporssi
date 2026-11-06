@@ -138,10 +138,7 @@ def create_app(config=None):
     def api_weather():
         day = parse_day(request.args.get("date"))
         conn = get_db()
-        try:
-            location = heating.get_location(conn, request.args.get("location", "helsinki"))
-        except KeyError:
-            abort(404, "Tuntematon paikkakunta")
+        location = _location(conn, request.args.get("location", "helsinki"))
         if cfg.lazy_fetch:
             heating.ensure_weather(conn, location, day)
         return jsonify({"date": day.isoformat(), "location": location["id"],
@@ -152,10 +149,7 @@ def create_app(config=None):
         a = request.args
         day = parse_day(a.get("date"))
         conn = get_db()
-        try:
-            location = heating.get_location(conn, a.get("location", "helsinki"))
-        except KeyError:
-            abort(404, "Tuntematon paikkakunta")
+        location = _location(conn, a.get("location", "helsinki"))
         if cfg.lazy_fetch:
             heating.ensure_weather(conn, location, day)
 
@@ -170,7 +164,7 @@ def create_app(config=None):
 
         try:
             result = heating.estimate_day(
-                conn, day, location["id"], a.get("system", "suora"),
+                conn, day, location, a.get("system", "suora"),
                 area_m2=num("area"), era_id=a.get("era"),
                 annual_heat_kwh=num("annual_kwh"), indoor_temp=num("indoor") or 21.0,
             )
@@ -179,6 +173,14 @@ def create_app(config=None):
         except ValueError as exc:
             abort(400, str(exc))
         return jsonify(result)
+
+    def _location(conn, location_id):
+        try:
+            return heating.get_location(conn, location_id)
+        except KeyError:
+            abort(404, "Tuntematon paikkakunta")
+        except ValueError as exc:
+            abort(400, str(exc))
 
     @app.errorhandler(400)
     @app.errorhandler(404)
