@@ -26,6 +26,9 @@ kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin h
   lämmin vesi ja rakennuksen lämmitys (kWh ja €) sekä summat. Lämmin vesi lasketaan henkilömäärästä
   (oletus 2,5 kWh/hlö/vrk, Motiva) joko ajastetulla varaajalla tai tasaisena kulutuksena.
 - Kustannukset näytetään sentin tarkkuudella.
+- **Asennettava sovellus (PWA)**: manifest, kuvakkeet ja service worker. Androidissa (Chrome, Edge)
+  otsikon "📲 Asenna" -painike asentaa sovelluksen aloitusnäytölle; iPhonessa painike näyttää ohjeen
+  (Safari → Jaa → Lisää Koti-valikkoon). Ilman verkkoa näytetään viimeksi haetut tiedot.
 - Hinnaksi voi valita pelkän spot-hinnan (ALV 0) tai kuluttajahinnan (ALV, marginaali, siirto, sähkövero).
 
 ## Rakenne

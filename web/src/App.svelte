@@ -15,6 +15,7 @@
   import Heating from './components/Heating.svelte';
   import Settings from './components/Settings.svelte';
   import NowCosts from './components/NowCosts.svelte';
+  import InstallButton from './components/InstallButton.svelte';
 
   const DEFAULT_HEATING = {
     location: 'helsinki', system: 'ilp', mode: 'era', area: 120,
@@ -276,6 +277,7 @@
       <p class="muted small">Pörssisähkön hinta ja kodin laitteiden käyttökustannukset</p>
     </div>
     <span class="spacer"></span>
+    <InstallButton />
     <button type="button" onclick={() => (showSettings = !showSettings)}>⚙ Asetukset</button>
   </header>
 
@@ -378,7 +380,7 @@
 </div>
 
 <style>
-  .head { margin-bottom: .5rem; }
+  .head { margin-bottom: .5rem; position: relative; }
   .head h1 { font-size: 1.6rem; margin: 0; }
   .head p { margin: .1rem 0 0; }
   .nav { margin-bottom: .6rem; }

@@ -1,10 +1,12 @@
+AddType application/manifest+json .webmanifest
+
 # Apache: käännetyt tiedostot (assets/) saa välimuistittaa pitkään,
 # index.html ja config.js eivät.
 <IfModule mod_headers.c>
   <FilesMatch "\.(js|css|svg|woff2?)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
-  <FilesMatch "^(index\.html|config\.js)$">
+  <FilesMatch "^(index\.html|config\.js|sw\.js|manifest\.webmanifest)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>
