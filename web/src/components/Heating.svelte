@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import echarts from '../lib/echarts.js';
-  import { screen } from '../lib/chart.svelte.js';
+  import { screen, applyFont, remPx } from '../lib/chart.svelte.js';
   import { hhmm, fmtKwh, fmtPrice, fmtEur } from '../lib/pricing.js';
 
   let { options, cfg = $bindable(), data, error, loading, water, costHours = [], geoStatus = '', onlocate } = $props();
@@ -46,11 +46,11 @@
     return {
       animation: false,
       grid: screen.narrow
-        ? { left: 2, right: 2, top: 34, bottom: 32, containLabel: true }
-        : { left: 52, right: 44, top: 32, bottom: 30 },
+        ? { left: 2, right: 2, top: remPx() * 2.2, bottom: remPx() * 3.8, containLabel: true }
+        : { left: 8, right: 8, top: remPx() * 2.6, bottom: 8, containLabel: true },
       legend: {
         ...(screen.narrow ? { bottom: 0, left: 0, itemWidth: 16, itemGap: 8 } : { top: 0 }),
-        textStyle: { color: muted, fontSize: screen.narrow ? 11 : 12 },
+        textStyle: { color: muted },
         data: [heatName, waterName, 'Ulkolämpötila °C'],
       },
       tooltip: {
@@ -94,7 +94,7 @@
     const opt = option();
     if (!el) { chart?.dispose(); chart = null; return; }
     if (!chart || chart.getDom() !== el) { chart?.dispose(); chart = echarts.init(el); }
-    chart.setOption(opt, true);
+    chart.setOption(applyFont(opt), true);
   });
 </script>
 
@@ -212,7 +212,7 @@
 <style>
   .controls { margin: .6rem 0; align-items: flex-end; }
   .locate { white-space: nowrap; }
-  .chart { width: 100%; height: 240px; }
-  @media (max-width: 640px) { .chart { height: 280px; } }
+  .chart { width: 100%; height: 17rem; }
+  @media (max-width: 640px) { .chart { height: 20rem; } }
   h3.water { margin-top: 1rem; }
 </style>

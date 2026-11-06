@@ -1,5 +1,5 @@
 <script>
-  import { echart, cssVar, screen } from '../lib/chart.svelte.js';
+  import { echart, cssVar, screen, remPx } from '../lib/chart.svelte.js';
   import { runCost, bestStart, deviceEnergy } from '../lib/cost.js';
   import { SLOT_MS, hhmm, weekdayShort, fmtEur, fmtKwh, fmtPrice } from '../lib/pricing.js';
 
@@ -61,12 +61,16 @@
     const border = cssVar('--border');
     const list = [...rows].reverse(); // ensimmäinen ylimpänä
     const narrow = screen.narrow;
+    const fs = remPx();
+    // Hinta näytetään palkin sisällä, kun palkki on tarpeeksi pitkä, muuten sen perässä
+    // (lyhyen palkin perässä on aina tilaa), joten kaavion oikealle ei tarvita marginaalia.
+    const max = Math.max(0.0001, ...list.map((r) => (r.eur === null ? 0 : r.eur)));
     return {
       animation: false,
       // Puhelimessa laitteen nimi on palkin yläpuolella, jolloin palkit saavat koko leveyden.
       grid: narrow
-        ? { left: 2, right: 48, top: 18, bottom: 4 }
-        : { left: 8, right: 70, top: 8, bottom: 24, containLabel: true },
+        ? { left: 2, right: 2, top: fs * 1.3, bottom: 2 }
+        : { left: 8, right: fs * 1.6, top: 8, bottom: 8, containLabel: true },
       tooltip: {
         trigger: 'item',
         formatter: (p) => {
@@ -87,18 +91,24 @@
       yAxis: {
         type: 'category', data: list.map((r) => r.dev.name),
         axisLabel: narrow
-          ? { inside: true, align: 'left', verticalAlign: 'bottom', padding: [0, 0, 9, 0], color: cssVar('--text'), fontSize: 12 }
+          ? { inside: true, align: 'left', verticalAlign: 'bottom', padding: [0, 0, Math.round(fs * 0.55), 0], color: cssVar('--text') }
           : { color: cssVar('--text') },
         axisTick: { show: false },
         axisLine: { lineStyle: { color: border } },
         z: 3,
       },
       series: [{
-        type: 'bar', barMaxWidth: 22, ...(narrow ? { barWidth: 12 } : {}),
-        data: list.map((r) => ({
-          value: r.eur === null ? null : Math.max(0, r.eur),
-          itemStyle: { color: cssVar('--accent') },
-        })),
+        type: 'bar', barMaxWidth: fs * 1.6, ...(narrow ? { barWidth: Math.round(fs * 0.8) } : {}),
+        data: list.map((r) => {
+          const inside = r.eur !== null && r.eur >= max * 0.6;
+          return {
+            value: r.eur === null ? null : Math.max(0, r.eur),
+            itemStyle: { color: cssVar('--accent') },
+            label: inside
+              ? { position: 'insideRight', color: '#fff', fontWeight: 'bold' }
+              : { position: 'right', color: cssVar('--text') },
+          };
+        }),
         label: {
           show: true, position: 'right', color: cssVar('--text'),
           formatter: (p) => fmtEur(list[p.dataIndex].eur),
@@ -107,8 +117,19 @@
     };
   });
 
-  // Puhelimessa selite rivitetään kaavion alle; arvio riveistä (2 nimeä riviä kohden).
-  const legendRows = $derived(screen.narrow ? Math.ceil(rows.length / 2) : 0);
+  // Puhelimessa selite rivitetään kaavion alle; arvioidaan rivien määrä nimien pituudesta.
+  const legendRows = $derived.by(() => {
+    if (!screen.narrow) return 0;
+    const fs = remPx();
+    const avail = Math.max(200, (typeof window !== 'undefined' ? window.innerWidth : 360) - 40);
+    let rowsN = 1, x = 0;
+    for (const r of rows) {
+      const w = r.dev.name.length * fs * 0.48 + fs * 2;
+      if (x > 0 && x + w > avail) { rowsN += 1; x = 0; }
+      x += w;
+    }
+    return rowsN;
+  });
   const futureOption = $derived.by(() => {
     scheme.dark;
     const muted = cssVar('--muted');
@@ -119,13 +140,13 @@
     return {
       animation: false,
       grid: narrow
-        ? { left: 2, right: 6, top: 22, bottom: legendRows * 22 + 8, containLabel: true }
-        : { left: 8, right: 16, top: 40, bottom: 28, containLabel: true },
+        ? { left: 2, right: remPx() * 1.4, top: remPx() * 1.6, bottom: legendRows * remPx() * 1.6 + 8, containLabel: true }
+        : { left: 8, right: remPx() * 1.8, top: remPx() * 2.8, bottom: 8, containLabel: true },
       legend: {
         ...(narrow ? { type: 'plain', bottom: 0, left: 0, itemWidth: 16, itemGap: 6 } : { type: 'scroll', top: 0 }),
         formatter: legendFormatter,
         textStyle: {
-          color: muted, fontSize: narrow ? 11 : 12,
+          color: muted,
           rich: { hi: { color: cssVar('--text'), fontWeight: 'bold', backgroundColor: cssVar('--row-alt'), padding: [2, 4], borderRadius: 3 } },
         },
       },
@@ -175,8 +196,7 @@
 {#if usable.length === 0}
   <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
 {:else}
-  <h3>Jos käynnistät nyt (klo {hhmm(nowStart)})</h3>
-  <div class="chart" style="height: {Math.max(140, (screen.narrow ? 22 : 34) + usable.length * (screen.narrow ? 42 : 34))}px" use:echart={nowOption}></div>
+  <div class="chart" style="height: {Math.max(140, remPx() * (screen.narrow ? 1.6 + usable.length * 3 : 2.5 + usable.length * 2.2))}px" use:echart={nowOption}></div>
   <p class="small muted">Kustannus lasketaan käytön ajan varttihinnoilla ({unit}) alkaen kuluvasta vartista.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 
@@ -189,7 +209,7 @@
     </div>
   </div>
   {#if starts.length > 1}
-    <div class="chart" style="height: {320 + legendRows * 22}px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
+    <div class="chart" style="height: {320 + legendRows * remPx() * 1.6}px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
     <p class="small muted">Jokainen viiva näyttää, mitä laitteen käyttökerta maksaa, jos se käynnistetään kyseisellä
       tunnilla{#if relative}, prosentteina siitä, mitä se maksaisi heti käynnistettynä{/if}. Viiva päättyy, kun käyttö
       jatkuisi yli tunnettujen hintojen. Laitteen voi piilottaa napsauttamalla sen nimeä.</p>

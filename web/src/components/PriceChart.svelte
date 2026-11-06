@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import echarts from '../lib/echarts.js';
-  import { screen } from '../lib/chart.svelte.js';
+  import { screen, applyFont, remPx } from '../lib/chart.svelte.js';
   import { classify, userPrice, hhmm, CLASS_LABELS, fmtPrice } from '../lib/pricing.js';
 
   let { rows, settings, bands, nowMs, unit, scheme } = $props();
@@ -29,7 +29,8 @@
     const yMax = Number(settings.yMax);
     // Palkin leveys pikseleinä ratkaisee, mahtuuko hinta palkkiin.
     const barPx = width ? (width - 64) / Math.max(1, rows.length) : 0;
-    const labelMode = barPx >= 30 ? 'flat' : barPx >= 15 ? 'rotated' : 'none';
+    const fs = remPx();
+    const labelMode = barPx >= fs * 2.4 ? 'flat' : barPx >= fs * 1.15 ? 'rotated' : 'none';
     const data = rows.map((r, i) => {
       const v = values[i];
       const cls = classify(r.spot, bands);
@@ -80,8 +81,8 @@
     return {
       animation: false,
       grid: screen.narrow
-        ? { left: 2, right: 4, top: labelMode === 'rotated' ? 40 : 30, bottom: 4, containLabel: true }
-        : { left: 48, right: 16, top: labelMode === 'rotated' ? 44 : 34, bottom: 36 },
+        ? { left: 2, right: 4, top: labelMode === 'rotated' ? fs * 3.2 : fs * 2.2, bottom: 4, containLabel: true }
+        : { left: 8, right: 16, top: labelMode === 'rotated' ? fs * 3.4 : fs * 2.4, bottom: 8, containLabel: true },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
@@ -134,7 +135,7 @@
   $effect(() => {
     // riippuvuudet: rows, settings, bands, nowMs, width, teema
     scheme?.dark;
-    const opt = buildOption();
+    const opt = applyFont(buildOption());
     chart?.setOption(opt, true);
   });
 </script>
@@ -142,5 +143,5 @@
 <div class="chart" bind:this={el}></div>
 
 <style>
-  .chart { width: 100%; height: 340px; }
+  .chart { width: 100%; height: 22rem; }
 </style>

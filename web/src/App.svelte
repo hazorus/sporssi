@@ -289,7 +289,7 @@
 
   <section class="card">
     <div class="row">
-      <h2>Laitteiden käyttö nyt</h2>
+      <h2>Laitteiden käyttö nyt (klo {hhmm(Math.floor(nowMs / 900000) * 900000)})</h2>
       <span class="spacer"></span>
       <a class="small" href="#laitteet">Valitse laitteet ({scheduled.length}) ↓</a>
     </div>
