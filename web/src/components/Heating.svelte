@@ -7,6 +7,12 @@
   let { options, cfg = $bindable(), data, error, loading, water, costHours = [], geoStatus = '', onlocate } = $props();
   const canLocate = typeof navigator !== 'undefined' && 'geolocation' in navigator;
   const costByHour = $derived(new Map(costHours.map((c) => [c.t, c])));
+  const chartLabel = $derived.by(() => {
+    const temps = (data?.hours ?? []).map((h) => h.temp).filter((t) => t !== null);
+    const range = temps.length ? `, ulkolämpötila ${fmtPrice(Math.min(...temps), 1)}…${fmtPrice(Math.max(...temps), 1)} °C` : '';
+    return `Lämmityksen ja lämpimän veden kustannus tunneittain: lämmitys ${fmtEur(dayCost.heating)}, `
+      + `lämmin vesi ${fmtEur(dayCost.water)} vuorokaudessa${range}.`;
+  });
   const dayCost = $derived.by(() => {
     let heating = 0, water = 0, unknown = false;
     for (const c of costHours) {
@@ -160,7 +166,7 @@
       {#if !data.complete}<span class="pill">osa tunneista ilman säätietoa</span>{/if}
       {#if loading}<span class="muted">päivitetään…</span>{/if}
     </p>
-    <div class="chart" bind:this={el}></div>
+    <div class="chart" bind:this={el} role="img" aria-label={chartLabel}></div>
   {/if}
   <details class="small muted">
     <summary>Miten lämmitys arvioidaan?</summary>

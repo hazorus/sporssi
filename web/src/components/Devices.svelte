@@ -167,7 +167,7 @@
             <input type="checkbox" checked={!!selection[dev.id]} onchange={(e) => toggle(dev, e.currentTarget.checked)} />
             <span class="pname">{dev.name}</span>
             <span class="muted small spec">{spec(dev)}</span>
-            {#if dev.custom}<button class="x" type="button" title="Poista laite" onclick={() => removeCustom(dev)}>🗑</button>{/if}
+            {#if dev.custom}<button class="x" type="button" title="Poista laite" aria-label="Poista oma laite {dev.name}" onclick={() => removeCustom(dev)}>🗑</button>{/if}
           </label>
         {/each}
       </details>

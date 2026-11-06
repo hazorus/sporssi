@@ -291,11 +291,19 @@
     }));
   });
 
+  // Kaavion tekstivastine ruudunlukijalle.
+  const priceChartLabel = $derived(summary
+    ? `Pörssisähkön hinta, ${dayLabel(date).toLowerCase()}, ${settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}: `
+      + `keskihinta ${fmtPrice(summary.avg)} ${unit}, halvin ${fmtPrice(summary.min.v)} klo ${hhmm(summary.min.t)}, `
+      + `kallein ${fmtPrice(summary.max.v)} klo ${hhmm(summary.max.t)}. Tarkat hinnat ovat hintataulukossa.`
+    : 'Pörssisähkön hintakaavio');
+
   const canNext = $derived(date < addDays(today, 1));
   const canPrev = $derived(!available || date > available.first);
   const tomorrowPending = $derived(date === addDays(today, 1) && cur && !cur.complete);
 </script>
 
+<a class="skip" href="#sisalto">Siirry sisältöön</a>
 <div class="wrap">
   <header class="row head">
     <div>
@@ -304,11 +312,16 @@
     </div>
     <span class="spacer"></span>
     <InstallButton />
-    <button type="button" onclick={() => (showSettings = !showSettings)}>⚙ Asetukset</button>
+    <button type="button" aria-expanded={showSettings} aria-controls="asetukset"
+      onclick={() => (showSettings = !showSettings)}><span aria-hidden="true">⚙</span> Asetukset</button>
   </header>
 
+  <main id="sisalto" tabindex="-1">
   {#if showSettings}
-    <section class="card"><Settings bind:settings {bands} /></section>
+    <section class="card" id="asetukset" aria-labelledby="asetukset-otsikko">
+      <h2 id="asetukset-otsikko">Asetukset</h2>
+      <Settings bind:settings {bands} />
+    </section>
   {/if}
 
   {#if net.offline}
@@ -331,12 +344,12 @@
       <button type="button" disabled={!canPrev} onclick={() => (date = addDays(date, -1))}>◀ Edellinen</button>
       <button type="button" disabled={date === today} onclick={() => (date = today)}>Tänään</button>
       <button type="button" disabled={!canNext} onclick={() => (date = addDays(date, 1))}>Seuraava ▶</button>
-      <input type="date" value={date} min={available?.first} max={addDays(today, 1)}
+      <input type="date" aria-label="Valitse päivä" value={date} min={available?.first} max={addDays(today, 1)}
         onchange={(e) => e.currentTarget.value && (date = e.currentTarget.value)} />
       <span class="spacer"></span>
       <div class="seg" role="group" aria-label="Tarkkuus">
-        <button type="button" class:on={settings.resolution === 'hour'} onclick={() => (settings.resolution = 'hour')}>Tunti</button>
-        <button type="button" class:on={settings.resolution === 'quarter'} onclick={() => (settings.resolution = 'quarter')}>15 min</button>
+        <button type="button" aria-pressed={settings.resolution === 'hour'} class:on={settings.resolution === 'hour'} onclick={() => (settings.resolution = 'hour')}>Tunti</button>
+        <button type="button" aria-pressed={settings.resolution === 'quarter'} class:on={settings.resolution === 'quarter'} onclick={() => (settings.resolution = 'quarter')}>15 min</button>
       </div>
     </div>
     <h2 class="day">{dayLabel(date)}{date === today ? ' (tänään)' : date === addDays(today, 1) ? ' (huomenna)' : ''}</h2>
@@ -345,7 +358,7 @@
       <div class="row stats">
         {#if summary.now && date === today}
           <div class="stat"><span class="muted small">Nyt</span>
-            <b class="big"><span class="swatch c-{classify(summary.now.spot, bands)}"></span> {fmtPrice(summary.now.v)}</b>
+            <b class="big"><span class="swatch c-{classify(summary.now.spot, bands)}" aria-hidden="true"></span> {fmtPrice(summary.now.v)}<span class="sr-only"> ({CLASS_LABELS[classify(summary.now.spot, bands)]})</span></b>
             <span class="small muted">{unit}</span></div>
         {/if}
         <div class="stat"><span class="muted small">Päivän keskihinta</span><b class="big">{fmtPrice(summary.avg)}</b><span class="small muted">{unit}</span></div>
@@ -368,7 +381,7 @@
         värialueet eivät vielä kuvaa vuoden tasoa. Ylläpitäjä: aja <code>python -m sporssi.cli backfill --days 400</code>.</p>
     {/if}
     {#if summary}
-      <PriceChart {scheme} rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit} />
+      <PriceChart {scheme} label={priceChartLabel} rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit} />
       <div class="row small legend">
         {#each ['cheap', 'green', 'yellow', 'red'] as c}
           <span><span class="swatch c-{c}"></span> {CLASS_LABELS[c]}</span>
@@ -401,6 +414,8 @@
     {/if}
     <CostTable {daySlots} columns={tableColumns} devices={tableDevices} extra={heatExtra} {priceAt} resolution={settings.resolution} {nowMs} {unit} />
   </section>
+
+  </main>
 
   <footer class="small muted">
     Hinnat: Nord Poolin day-ahead-hinnat alueelle FI (ENTSO-E Transparency Platform / sahkotin.fi).

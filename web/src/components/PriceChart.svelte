@@ -4,7 +4,7 @@
   import { screen, applyFont, remPx } from '../lib/chart.svelte.js';
   import { classify, userPrice, hhmm, CLASS_LABELS, fmtPrice } from '../lib/pricing.js';
 
-  let { rows, settings, bands, nowMs, unit, scheme } = $props();
+  let { rows, settings, bands, nowMs, unit, scheme, label = 'Pörssisähkön hintakaavio' } = $props();
   let width = $state(0);
   let el;
   let chart;
@@ -39,7 +39,9 @@
         value: v === null ? null : fixed ? Math.min(yMax, Math.max(yMin, v)) : v,
         real: v,
         cls,
-        itemStyle: { color: colors[cls], ...(clipped ? { decal: { symbol: 'rect', dashArrayX: [1, 0], dashArrayY: [2, 3] } } : {}) },
+        // Todella kalliit palkit vinoviivoitetaan, jotta ne erottuvat myös ilman värinäköä.
+        itemStyle: { color: colors[cls], ...(clipped ? { decal: { symbol: 'rect', dashArrayX: [1, 0], dashArrayY: [2, 3] } }
+          : cls === 'red' ? { decal: { symbol: 'rect', dashArrayX: [1, 0], dashArrayY: [3, 4], rotation: -Math.PI / 4, color: 'rgba(255,255,255,0.45)' } } : {}) },
         label: clipped
           ? { show: true, position: v > yMax ? 'insideTop' : 'insideBottom', formatter: fmtPrice(v, labelMode === 'flat' ? 1 : 0), color: '#fff', fontSize: 10, rotate: labelMode === 'rotated' ? 90 : 0 }
           : labelMode === 'none' || v === null
@@ -140,7 +142,7 @@
   });
 </script>
 
-<div class="chart" bind:this={el}></div>
+<div class="chart" bind:this={el} role="img" aria-label={label}></div>
 
 <style>
   .chart { width: 100%; height: 22rem; }

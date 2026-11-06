@@ -118,6 +118,17 @@
     };
   });
 
+  // Kaavioiden tekstivastineet ruudunlukijalle.
+  const nowLabel = $derived(`Käyttökustannus, jos laite käynnistetään nyt klo ${hhmm(nowStart)}: `
+    + rows.map((r) => `${r.dev.name} ${fmtEur(r.eur)}`).join(', ') + '.');
+  const futureLabel = $derived('Halvin aloitusaika tunnettujen hintojen perusteella: '
+    + rows.map((r) => (r.best ? `${r.dev.name} ${spoken(r.best.t)}, ${fmtEur(r.best.eur)}` : `${r.dev.name} ei tiedossa`)).join('; ') + '.');
+  // Ruudunlukijalle päivä mukaan, jos aloitus on huomenna.
+  function spoken(t) {
+    const sameDay = weekdayShort(t) === weekdayShort(nowMs);
+    return `${sameDay ? 'tänään' : weekdayShort(t)} klo ${hhmm(t)}`;
+  }
+
   // Puhelimessa selite rivitetään kaavion alle; arvioidaan rivien määrä nimien pituudesta.
   const legendRows = $derived.by(() => {
     if (!screen.narrow) return 0;
@@ -197,7 +208,7 @@
 {#if usable.length === 0}
   <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
 {:else}
-  <div class="chart" style="height: {Math.max(140, remPx() * (screen.narrow ? 1.6 + usable.length * 3 : 2.5 + usable.length * 2.2))}px" use:echart={nowOption}></div>
+  <div class="chart" role="img" aria-label={nowLabel} style="height: {Math.max(140, remPx() * (screen.narrow ? 1.6 + usable.length * 3 : 2.5 + usable.length * 2.2))}px" use:echart={nowOption}></div>
   <p class="small muted">Kustannus lasketaan käytön ajan varttihinnoilla ({unit}) alkaen kuluvasta vartista.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 
@@ -205,12 +216,12 @@
     <h3>Käyttökustannus eri aloitusaikoina</h3>
     <span class="spacer"></span>
     <div class="seg" role="group" aria-label="Asteikko">
-      <button type="button" class:on={!relative} onclick={() => (relative = false)}>€</button>
-      <button type="button" class:on={relative} onclick={() => (relative = true)}>% nykyhetkestä</button>
+      <button type="button" aria-pressed={!relative} class:on={!relative} onclick={() => (relative = false)}>€</button>
+      <button type="button" aria-pressed={relative} class:on={relative} onclick={() => (relative = true)}>% nykyhetkestä</button>
     </div>
   </div>
   {#if starts.length > 1}
-    <div class="chart" style="height: {320 + legendRows * remPx() * 1.6}px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
+    <div class="chart" role="img" aria-label={futureLabel} style="height: {320 + legendRows * remPx() * 1.6}px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
     <p class="small muted">Jokainen viiva näyttää, mitä laitteen käyttökerta maksaa, jos se käynnistetään kyseisellä
       tunnilla{#if relative}, prosentteina siitä, mitä se maksaisi heti käynnistettynä{/if}. Viiva päättyy, kun käyttö
       jatkuisi yli tunnettujen hintojen. Laitteen voi piilottaa napsauttamalla sen nimeä.</p>

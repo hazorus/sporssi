@@ -1,5 +1,5 @@
 <script>
-  import { classify, userPrice, hhmm, fmtPrice } from '../lib/pricing.js';
+  import { classify, userPrice, hhmm, fmtPrice, CLASS_LABELS } from '../lib/pricing.js';
 
   let { hours, settings, bands, nowMs, unit } = $props();
   const quarterMode = $derived(settings.resolution === 'quarter');
@@ -29,10 +29,10 @@
           {#if quarterMode}
             {#each h.quarters as q (q.t)}
               {@const c = cell(q.spot)}
-              <td class="num" class:qnow={isNow(q.t, 15)}><span class="swatch c-{c.cls}"></span> {fmtPrice(c.v)}</td>
+              <td class="num" class:qnow={isNow(q.t, 15)}><span class="swatch c-{c.cls}" title={CLASS_LABELS[c.cls]} aria-hidden="true"></span> {fmtPrice(c.v)}<span class="sr-only"> {CLASS_LABELS[c.cls]}</span></td>
             {/each}
           {/if}
-          <td class="num"><span class="swatch c-{avg.cls}"></span> <b>{fmtPrice(avg.v)}</b></td>
+          <td class="num"><span class="swatch c-{avg.cls}" title={CLASS_LABELS[avg.cls]} aria-hidden="true"></span> <b>{fmtPrice(avg.v)}</b><span class="sr-only"> {CLASS_LABELS[avg.cls]}</span></td>
         </tr>
       {/each}
     </tbody>
