@@ -15,6 +15,10 @@ AddType application/manifest+json .webmanifest
 # 'unsafe-inline' tyyleille tarvitaan, koska kaaviot ja Svelte asettavat style-attribuutteja.
 # Jos config.js:n apiBase osoittaa toiseen palvelimeen, lisää se connect-src-listaan.
 <IfModule mod_headers.c>
+  # Palvelimen yleisasetus lisää Access-Control-Allow-Origin: * -otsakkeen; sovellus ei tarvitse sitä.
+  # Molemmat muodot, koska otsake voi olla asetettu joko "Header set" tai "Header always set".
+  Header unset Access-Control-Allow-Origin
+  Header always unset Access-Control-Allow-Origin
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"
