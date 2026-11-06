@@ -14,6 +14,7 @@
   --none: #a0a8a3;
   --row-alt: #f7f9f7;
   --now: #2463d6;
+  --cost: #2463d6;   /* kustannuspalkit (tarkistettu värisokeille vihreän rinnalla) */
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -29,6 +30,7 @@
     --accent-ink: #0d1410;
     --row-alt: #1f2622;
     --now: #6f9bff;
+    --cost: #4f86f0;
     --green: #4caf50;
     --yellow: #e4b200;
   }
