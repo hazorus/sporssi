@@ -1,3 +1,4 @@
+import time
 from datetime import date, datetime, timezone
 
 import pytest
@@ -138,3 +139,35 @@ def test_api_heating_geo(tmp_path):
     d = r.get_json()
     assert d["location"] == "geo:61.5,23.9" and d["nearest_name"] == "Tampere"
     assert c.get("/api/heating?location=geo:40.0,10.0&system=suora&annual_kwh=1").status_code == 400
+
+
+def test_http_cache_headers_and_etag(tmp_path):
+    app = create_app(Config(db_path=str(tmp_path / "c.sqlite3"), lazy_fetch=False))
+    c = app.test_client()
+    conn = db.connect(str(tmp_path / "c.sqlite3"))
+    past = date(2026, 1, 15)
+    start, end = local_day_bounds(past)
+    db.upsert_prices(conn, "FI", [(t, 15, 50.0) for t in range(start, end, 900)], "test")
+    r = c.get("/api/prices?date=2026-01-15")
+    assert r.get_json()["complete"] is True
+    assert "max-age=2592000" in r.headers["Cache-Control"]
+    etag = r.headers["ETag"]
+    r2 = c.get("/api/prices?date=2026-01-15", headers={"If-None-Match": etag})
+    assert r2.status_code == 304
+    # keskeneräinen päivä: ei välimuistia
+    r3 = c.get("/api/prices?date=2026-01-16")
+    assert r3.headers["Cache-Control"] == "no-cache"
+    assert "max-age=3600" in c.get("/api/devices").headers["Cache-Control"]
+    assert c.get("/api/health").headers["Cache-Control"] == "no-store"
+
+
+def test_stats_cache_invalidates_on_new_prices(tmp_path):
+    app = create_app(Config(db_path=str(tmp_path / "s.sqlite3"), lazy_fetch=False))
+    c = app.test_client()
+    conn = db.connect(str(tmp_path / "s.sqlite3"))
+    now = int(time.time())
+    db.upsert_prices(conn, "FI", [(now - 7200 + i * 900, 15, 100.0) for i in range(4)], "test")
+    assert c.get("/api/stats").get_json()["stats"]["mean"] == 10.0
+    assert c.get("/api/stats").get_json()["stats"]["mean"] == 10.0  # välimuistista
+    db.upsert_prices(conn, "FI", [(now - 3600 + i * 900, 15, 300.0) for i in range(4)], "test")
+    assert c.get("/api/stats").get_json()["stats"]["mean"] == 20.0

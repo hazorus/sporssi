@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { api } from './lib/api.js';
+  import { net } from './lib/net.svelte.js';
   import { load, loadList, loadOr, save } from './lib/storage.js';
   import { colorScheme, screen } from './lib/chart.svelte.js';
   import {
@@ -110,18 +111,31 @@
     );
   }
 
+  function loadMeta() {
+    api.stats().then((r) => { stats = r.stats; available = r.available; }).catch(() => {});
+    api.devices().then((r) => { catalog = r; loadError = ''; }).catch((e) => { if (!catalog.length) loadError = `Laitteiden haku epäonnistui: ${e.message}`; });
+    api.heatingOptions().then((r) => { heatOptions = r; }).catch(() => {});
+  }
+
+  // Kun yhteys palaa, haetaan näkyvät tiedot uudelleen (välimuistista näytetyt korvautuvat).
+  function onOnline() {
+    loadMeta();
+    for (const d of new Set([addDays(date, -1), date, addDays(date, 1), today, addDays(today, 1)])) fetchDay(d, true);
+    heatMemo.clear();
+    heatReload += 1;
+  }
+
   onMount(() => {
     if (heatCfg.geoAsked !== 'denied') locate(false);
-    api.stats().then((r) => { stats = r.stats; available = r.available; }).catch(() => {});
-    api.devices().then((r) => { catalog = r; }).catch((e) => { loadError = `Laitteiden haku epäonnistui: ${e.message}`; });
-    api.heatingOptions().then((r) => { heatOptions = r; }).catch(() => {});
+    loadMeta();
+    window.addEventListener('online', onOnline);
     const timer = setInterval(() => {
       nowMs = Date.now();
       for (const d of new Set([addDays(date, -1), date, addDays(date, 1), today, addDays(today, 1)])) {
         if (days[d] && !days[d].complete && d <= addDays(today, 1)) fetchDay(d);
       }
     }, 60000);
-    return () => clearInterval(timer);
+    return () => { clearInterval(timer); window.removeEventListener('online', onOnline); };
   });
 
   // Käyttö nyt -kaaviot tarvitsevat aina tämän päivän ja huomisen hinnat.
@@ -222,6 +236,8 @@
   ]);
 
   // Lämmitys
+  const heatMemo = new Map();
+  let heatReload = $state(0);
   $effect(() => {
     const c = $state.snapshot(heatCfg);
     const d = date;
@@ -230,10 +246,15 @@
       date: d, location: c.location, system: c.system === DISTRICT ? 'suora' : c.system, indoor: c.indoor,
       ...(c.mode === 'era' ? { area: c.area, era: c.era } : { annual_kwh: c.annual_kwh }),
     };
+    heatReload;
+    // Saman käyttökerran aikana jo haettu arvio käytetään uudelleen (10 min), esim. päivää vaihdettaessa.
+    const key = JSON.stringify(params);
+    const hit = heatMemo.get(key);
+    if (hit && Date.now() - hit.at < 10 * 60000) { heatData = hit.data; heatError = ''; return; }
     heatLoading = true;
     const timer = setTimeout(() => {
       api.heating(params)
-        .then((r) => { heatData = r; heatError = ''; })
+        .then((r) => { heatData = r; heatError = ''; if (!net.offline) heatMemo.set(key, { at: Date.now(), data: r }); })
         .catch((e) => { heatError = `Lämmitysarvio epäonnistui: ${e.message}`; heatData = null; })
         .finally(() => { heatLoading = false; });
     }, 300);
@@ -285,7 +306,11 @@
     <section class="card"><Settings bind:settings {bands} /></section>
   {/if}
 
-  {#if loadError}<p class="error">{loadError}</p>{/if}
+  {#if net.offline}
+    <p class="offline" role="status">Ei verkkoyhteyttä – näytetään {net.storedAt
+      ? `${localDate(net.storedAt) === today ? 'tänään' : localDate(net.storedAt)} klo ${hhmm(net.storedAt)}`
+      : 'aiemmin'} tallennetut tiedot.</p>
+  {:else if loadError}<p class="error">{loadError}</p>{/if}
 
   <section class="card">
     <div class="row">
@@ -381,6 +406,7 @@
 
 <style>
   .head { margin-bottom: .5rem; position: relative; }
+  .offline { border-left: 4px solid var(--yellow); background: var(--card); padding: .5rem .8rem; border-radius: 6px; margin: 0 0 1rem; }
   .head h1 { font-size: 1.6rem; margin: 0; }
   .head p { margin: .1rem 0 0; }
   .nav { margin-bottom: .6rem; }
