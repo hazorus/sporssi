@@ -1,6 +1,17 @@
 <script>
   import { deviceEnergy, runCost, bestStart, startMsFor } from '../lib/cost.js';
   import { hhmm, fmtEur, fmtKwh, SLOT_MS } from '../lib/pricing.js';
+  import { screen } from '../lib/chart.svelte.js';
+
+  // Luettelon arvot ilman turhia desimaaleja: 0,5 kWh/kerta, 150 kWh/v.
+  const short = (v) => (v === null || v === undefined ? '–'
+    : Number(v).toLocaleString('fi-FI', { maximumFractionDigits: 2 }));
+  function spec(dev) {
+    if (dev.kind === 'continuous') return `${short(dev.annual_kwh)} kWh/v`;
+    if (dev.kind === 'cycle') return `${short(dev.energy_kwh)} kWh/kerta`;
+    return `${short(dev.power_kw)} kW`;
+  }
+  const countIn = (cat) => all.filter((d) => d.category === cat && selection[d.id]).length;
 
   let { catalog, custom = $bindable(), selection = $bindable(), daySlots, priceAt, nowMs, isToday } = $props();
 
@@ -68,25 +79,92 @@
   }
 </script>
 
-<div class="grid2">
-  <div>
-    <h3>Valitse laitteet</h3>
+<div class="devices">
+  <div class="selected-col">
+    <h3>Valitut laitteet ({selected.length})</h3>
+    {#if selected.length === 0}
+      <p class="muted">Valitse laitteet luettelosta, niin näet niiden käyttökustannukset.</p>
+    {/if}
+    {#each selected as dev (dev.id)}
+      {@const r = info(dev)}
+      <div class="dev">
+        <div class="dev-head">
+          <b class="name">{dev.name}</b>
+          <span class="num cost">{fmtKwh(r.kwh)} kWh{r.continuous ? '/vrk' : ''} · <b>{fmtEur(r.eur)}</b></span>
+          <button type="button" class="x" title="Poista valinta" aria-label="Poista {dev.name}" onclick={() => toggle(dev, false)}>✕</button>
+        </div>
+        {#if r.continuous}
+          <div class="row small fields">
+            <label class="field">Vuosikulutus, kWh <input type="number" min="0" step="10" value={dev.annual_kwh}
+              onchange={(e) => set(dev, 'annual_kwh', Number(e.currentTarget.value))} /></label>
+            <span class="muted">jaettu tasaisesti vuorokaudelle</span>
+          </div>
+        {:else}
+          <div class="row small fields">
+            <label class="field">Aloitus <input type="time" step="900" value={dev.start}
+              onchange={(e) => set(dev, 'start', e.currentTarget.value)} /></label>
+            <label class="field">Kesto, min <input type="number" min="1" step="1" value={dev.duration_min}
+              onchange={(e) => set(dev, 'duration_min', Number(e.currentTarget.value))} /></label>
+            {#if dev.kind === 'power'}
+              <label class="field">Teho, kW <input type="number" min="0" step="0.01" value={dev.power_kw}
+                onchange={(e) => set(dev, 'power_kw', Number(e.currentTarget.value))} /></label>
+            {:else}
+              <label class="field">kWh/kerta <input type="number" min="0" step="0.01" value={dev.energy_kwh}
+                onchange={(e) => set(dev, 'energy_kwh', Number(e.currentTarget.value))} /></label>
+            {/if}
+          </div>
+          {#if r.best && r.eur !== null}
+            {@const save = r.eur - r.best.eur}
+            <p class="small best">
+              {#if save >= 0.005}
+                Halvin aloitus {isToday ? 'loppupäivänä' : 'tänä päivänä'} <b>klo {hhmm(r.best.t)}</b>: {fmtEur(r.best.eur)}
+                (säästö {fmtEur(save)})
+                <button type="button" onclick={() => set(dev, 'start', hhmm(r.best.t))}>Siirrä</button>
+              {:else}<span class="pill">valittu aika on halvin</span>{/if}
+            </p>
+          {:else if r.eur === null}
+            <p class="small muted best">Kaikkia käyttöajan hintoja ei vielä tiedetä.</p>
+          {/if}
+        {/if}
+      </div>
+    {/each}
+    {#if selected.length}
+      <details class="small muted sources">
+        <summary>Valittujen laitteiden tiedot ja lähteet</summary>
+        <dl>
+          {#each selected as dev (dev.id)}
+            <dt>{dev.name}</dt>
+            <dd>
+              {#if dev.notes}<p>{dev.notes}</p>{/if}
+              {#if dev.sources?.length}
+                <ul>
+                  {#each dev.sources as s}
+                    <li>{#if s.url}<a href={s.url} target="_blank" rel="noopener">{s.name}</a>{:else}{s.name}{/if}</li>
+                  {/each}
+                </ul>
+              {:else if !dev.notes}<p>Ei lähdetietoja.</p>{/if}
+            </dd>
+          {/each}
+        </dl>
+      </details>
+    {/if}
+  </div>
+
+  <div class="picker-col">
+    <h3>{screen.narrow ? 'Lisää tai poista laitteita' : 'Valitse laitteet'}</h3>
     {#each categories as cat (cat)}
-      <fieldset>
-        <legend>{cat}</legend>
+      {@const n = countIn(cat)}
+      <details class="cat" open={!screen.narrow}>
+        <summary><span>{cat}</span>{#if n}<span class="pill">{n} valittu</span>{/if}</summary>
         {#each all.filter((d) => d.category === cat) as dev (dev.id)}
           <label class="pick" title={dev.notes ?? ''}>
             <input type="checkbox" checked={!!selection[dev.id]} onchange={(e) => toggle(dev, e.currentTarget.checked)} />
-            {dev.name}
-            <span class="muted small">
-              {#if dev.kind === 'continuous'}{fmtKwh(dev.annual_kwh)} kWh/v
-              {:else if dev.kind === 'cycle'}{fmtKwh(dev.energy_kwh)} kWh/kerta
-              {:else}{fmtKwh(dev.power_kw)} kW{/if}
-            </span>
-            {#if dev.custom}<button class="x" type="button" title="Poista" onclick={() => removeCustom(dev)}>✕</button>{/if}
+            <span class="pname">{dev.name}</span>
+            <span class="muted small spec">{spec(dev)}</span>
+            {#if dev.custom}<button class="x" type="button" title="Poista laite" onclick={() => removeCustom(dev)}>🗑</button>{/if}
           </label>
         {/each}
-      </fieldset>
+      </details>
     {/each}
 
     <details class="add">
@@ -116,75 +194,43 @@
       </form>
     </details>
   </div>
-
-  <div>
-    <h3>Valitut laitteet</h3>
-    {#if selected.length === 0}
-      <p class="muted">Valitse vasemmalta laitteet, joiden käyttökustannukset haluat nähdä.</p>
-    {/if}
-    {#each selected as dev (dev.id)}
-      {@const r = info(dev)}
-      <div class="dev">
-        <div class="row">
-          <b>{dev.name}</b><span class="spacer"></span>
-          <span class="num">{fmtKwh(r.kwh)} kWh{r.continuous ? '/vrk' : ''} · <b>{fmtEur(r.eur)}</b></span>
-        </div>
-        {#if r.continuous}
-          <p class="muted small">Jatkuva kulutus, jaettu tasaisesti vuorokaudelle.
-            Vuosikulutus <input type="number" min="0" step="10" value={dev.annual_kwh}
-              onchange={(e) => set(dev, 'annual_kwh', Number(e.currentTarget.value))} /> kWh</p>
-        {:else}
-          <div class="row small">
-            <label class="field">Aloitus <input type="time" step="900" value={dev.start}
-              onchange={(e) => set(dev, 'start', e.currentTarget.value)} /></label>
-            <label class="field">Kesto, min <input type="number" min="1" step="1" value={dev.duration_min}
-              onchange={(e) => set(dev, 'duration_min', Number(e.currentTarget.value))} /></label>
-            {#if dev.kind === 'power'}
-              <label class="field">Teho, kW <input type="number" min="0" step="0.01" value={dev.power_kw}
-                onchange={(e) => set(dev, 'power_kw', Number(e.currentTarget.value))} /></label>
-            {:else}
-              <label class="field">kWh/kerta <input type="number" min="0" step="0.01" value={dev.energy_kwh}
-                onchange={(e) => set(dev, 'energy_kwh', Number(e.currentTarget.value))} /></label>
-            {/if}
-          </div>
-          {#if r.best && r.eur !== null}
-            {@const save = r.eur - r.best.eur}
-            <p class="small best">
-              Halvin aloitus {isToday ? 'loppupäivänä' : 'tänä päivänä'}: <b>klo {hhmm(r.best.t)}</b> → {fmtEur(r.best.eur)}
-              {#if save >= 0.005}
-                (säästö {fmtEur(save)})
-                <button type="button" onclick={() => set(dev, 'start', hhmm(r.best.t))}>Siirrä</button>
-              {:else}<span class="pill">valittu aika on halvin</span>{/if}
-            </p>
-          {:else if r.eur === null}
-            <p class="small muted">Kaikkia käyttöajan hintoja ei vielä tiedetä.</p>
-          {/if}
-        {/if}
-        {#if dev.sources?.length}
-          <details class="small muted">
-            <summary>Lähteet</summary>
-            {#if dev.notes}<p>{dev.notes}</p>{/if}
-            <ul>
-              {#each dev.sources as s}
-                <li>{#if s.url}<a href={s.url} target="_blank" rel="noopener">{s.name}</a>{:else}{s.name}{/if}</li>
-              {/each}
-            </ul>
-          </details>
-        {/if}
-      </div>
-    {/each}
-  </div>
 </div>
 
 <style>
-  fieldset { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 .6rem; padding: .3rem .7rem .5rem; }
-  legend { font-size: .8rem; color: var(--muted); padding: 0 .3rem; }
-  .pick { display: flex; gap: .4rem; align-items: center; padding: .15rem 0; }
-  .pick .muted { margin-left: auto; }
-  .x { padding: 0 .35rem; font-size: .75rem; }
-  .dev { border-bottom: 1px solid var(--border); padding: .55rem 0; }
-  .dev .field input { width: 6.5rem; }
-  .best { margin: .4rem 0 0; }
+  .devices { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap: 1.5rem; }
+  .picker-col { order: -1; }   /* leveällä näytöllä valinta vasemmalla */
+  @media (max-width: 640px) {
+    .devices { grid-template-columns: 1fr; gap: .8rem; }
+    .picker-col { order: 0; }  /* puhelimessa valitut ensin, luettelo alla */
+  }
+  details.cat { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 .5rem; padding: .35rem .7rem; }
+  details.cat > summary { display: flex; gap: .5rem; align-items: center; font-size: .85rem; color: var(--muted); padding: .15rem 0; }
+  details.cat[open] > summary { margin-bottom: .2rem; }
+  details.cat > summary { list-style: none; cursor: pointer; }
+  details.cat > summary::-webkit-details-marker { display: none; }
+  details.cat > summary::before { content: '▸'; display: inline-block; width: .8rem; color: var(--muted); }
+  details.cat[open] > summary::before { content: '▾'; }
+  .pick { display: flex; gap: .45rem; align-items: center; padding: .3rem 0; }
+  .pick input { flex: none; width: 1.1rem; height: 1.1rem; }
+  .pname { flex: 1; min-width: 0; }
+  .spec { white-space: nowrap; }
+  .x { padding: 0 .4rem; font-size: .8rem; line-height: 1.6; }
+  .dev { border-bottom: 1px solid var(--border); padding: .6rem 0; }
+  .dev-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+  .dev-head .name { flex: 1 1 12rem; }
+  .dev-head .cost { margin-left: auto; }
+  .fields { margin-top: .35rem; gap: .4rem; }
+  .fields .field input { width: 6.5rem; }
+  @media (max-width: 640px) {
+    .fields { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .fields .field input { width: 100%; }
+  }
+  .best { margin: .35rem 0 0; }
   .add form { display: grid; gap: .5rem; margin-top: .5rem; }
-  ul { margin: .3rem 0; padding-left: 1.1rem; }
+  .sources { margin-top: .6rem; }
+  .sources dl { margin: .4rem 0; }
+  .sources dt { font-weight: 600; color: var(--text); margin-top: .5rem; }
+  .sources dd { margin: .1rem 0 0 0; }
+  .sources p { margin: .1rem 0; }
+  ul { margin: .2rem 0; padding-left: 1.1rem; }
 </style>
