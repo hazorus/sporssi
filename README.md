@@ -129,6 +129,25 @@ SPORSSI_DB=/var/lib/sporssi/sporssi.sqlite3 python3 scripts/update_reference_dat
   rajapintavastauksista säilytetään 14 viimeistä päivää, ja vanhat käännetyt tiedostot poistetaan,
   kun uusi versio on ladattu.
 
+## Tietoturva
+
+- Rajapinta on vain luku -tyyppinen: ei kirjautumista, evästeitä eikä käyttäjien tallentamaa dataa
+  palvelimella (omat laitteet ja asetukset ovat selaimen `localStorage`ssa). Kaikki SQL-kyselyt ovat
+  parametroituja.
+- Rajapinnan käynnistämät ulkoiset haut on rajattu: hinnat enintään 7 vrk taaksepäin, säähavainnot
+  31 vrk, ja kaikkiaan enintään 60 hakua 10 minuutissa. Pidempi historia haetaan komennolla
+  `cli backfill`.
+- `/api/health` ei näytä palvelimen polkuja eikä ulkoisten palvelujen virheviestejä; käynnistysvirhe
+  näyttää vain virheen tyypin ja viestin.
+- Käyttöliittymä: CSP (`script-src 'self'`, `connect-src 'self'`), `X-Content-Type-Options`,
+  `Referrer-Policy` ja `Permissions-Policy` (`web/public/.htaccess`); kaavioiden HTML-vihjeissä
+  laitteiden nimet suojataan.
+- Palvelimen asetukset kannattaa lisäksi tehdä Apachen pääkonfiguraatiossa:
+  `Header always set Strict-Transport-Security "max-age=31536000"` (HTTPS-sivustolle),
+  `ServerTokens Prod` ja `ServerSignature Off`.
+- Pidä `sporssi.env` (ENTSO-E-token) vain omistajan luettavana: `chmod 600 sporssi.env`, ja repo
+  verkkohakemiston ulkopuolella.
+
 ## Lämmityksen arvio
 
 Rakennuksen lämpöhäviökerroin lasketaan vuotuisesta lämmitystarpeesta ja paikkakunnan

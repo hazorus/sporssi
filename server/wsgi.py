@@ -51,11 +51,7 @@ except Exception as exc:  # käynnistysvirhe näytetään vastauksessa
         "error": "Sporssi-rajapinta ei käynnistynyt",
         "type": type(exc).__name__,
         "message": str(exc),
-        "python": sys.version.split()[0],
-        "executable": sys.executable,
-        "user": os.environ.get("USER") or str(os.getuid()),
-        "SPORSSI_DB": os.environ.get("SPORSSI_DB", "(ei asetettu, oletus <repo>/var/sporssi.sqlite3)"),
-        "env_files": [str(p) for p in ENV_FILES if p.exists()],
+        "hint": "Tarkempi virhe Apachen virhelokissa.",
     }
 
 

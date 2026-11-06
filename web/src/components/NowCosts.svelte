@@ -1,7 +1,7 @@
 <script>
   import { echart, cssVar, screen, remPx } from '../lib/chart.svelte.js';
   import { runCost, bestStart, deviceEnergy } from '../lib/cost.js';
-  import { SLOT_MS, hhmm, weekdayShort, fmtEur, fmtKwh, fmtPrice } from '../lib/pricing.js';
+  import { SLOT_MS, hhmm, weekdayShort, fmtEur, fmtKwh, fmtPrice, esc } from '../lib/pricing.js';
 
   // devices: [{key, dev}] valitut laitteet, priceAt: tämän päivän + huomisen hinnat
   let { devices, priceAt, nowMs, lastKnownMs, scheme, unit } = $props();
@@ -11,7 +11,8 @@
   // Hiiren alla olevan laitteen nimi korostetaan selitteessä ja työkaluvihjeessä.
   let hovered = null;
   function legendFormatter(name) {
-    return name === hovered ? `{hi|${name}}` : name;
+    const safe = String(name).replace(/[{}|]/g, '');
+    return name === hovered ? `{hi|${safe}}` : safe;
   }
   function setupFuture(chart) {
     const set = (name) => {
@@ -75,7 +76,7 @@
         trigger: 'item',
         formatter: (p) => {
           const r = list[p.dataIndex];
-          let s = `<b>${r.dev.name}</b><br/>${fmtKwh(deviceEnergy(r.dev))} kWh, ${r.dev.duration_min} min`
+          let s = `<b>${esc(r.dev.name)}</b><br/>${fmtKwh(deviceEnergy(r.dev))} kWh, ${r.dev.duration_min} min`
             + `<br/>Aloitus nyt: <b>${fmtEur(r.eur)}</b>${r.approx ? ' (arvio nykyhinnalla)' : ''}`;
           if (r.best && r.eur !== null && r.best.eur < r.eur - 0.005) {
             s += `<br/>Halvin aloitus ${label(r.best.t)}: ${fmtEur(r.best.eur)}`;
@@ -156,8 +157,8 @@
           const items = [...ps].filter((p) => p.value !== null && p.value !== undefined)
             .sort((a, b) => a.value - b.value);
           const head = ps.length ? ps[0].name : '';
-          return `Aloitus ${head}<br/>` + items.map((p) => {
-            const line = `${p.marker}${p.seriesName}: ${fmt(p.value)}`;
+          return `Aloitus ${esc(head)}<br/>` + items.map((p) => {
+            const line = `${p.marker}${esc(p.seriesName)}: ${fmt(p.value)}`;
             return p.seriesName === hovered ? `<b>${line}</b>` : line;
           }).join('<br/>');
         },

@@ -10,6 +10,7 @@ from .timeutil import HEL, SLOT, iso_utc, local_day_bounds, today_local
 
 PUBLISH_LOCAL = dtime(13, 30)   # huomisen hinnat julkaistaan n. klo 13.45 Suomen aikaa
 RETRY_SECONDS = 10 * 60         # saman päivän uudelleenhaun minimiväli
+LAZY_PAST_DAYS = 7              # rajapinta hakee itse vain viikon taakse; vanhempi historia: cli backfill
 
 
 def fetch_range(conn, cfg, start_utc, end_utc):
@@ -54,7 +55,7 @@ def ensure_day(conn, cfg, day, now=None):
         return
     now = now or datetime.now(HEL)
     today = today_local(now)
-    if day > today + timedelta(days=1):
+    if day > today + timedelta(days=1) or day < today - timedelta(days=LAZY_PAST_DAYS):
         return
     if day == today + timedelta(days=1) and now.astimezone(HEL).time() < PUBLISH_LOCAL:
         return
@@ -62,6 +63,8 @@ def ensure_day(conn, cfg, day, now=None):
     target = f"{cfg.area}:{iso_utc(start)}"
     last = db.last_fetch_at(conn, "prices", target)
     if last and time.time() - last < RETRY_SECONDS:
+        return
+    if not db.fetch_budget_left(conn):
         return
     try:
         fetch_range(conn, cfg, start, end)

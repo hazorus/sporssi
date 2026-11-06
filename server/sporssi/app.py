@@ -51,6 +51,8 @@ def create_app(config=None):
         if cfg.cors_origin:
             resp.headers["Access-Control-Allow-Origin"] = cfg.cors_origin
         resp.headers.setdefault("Cache-Control", "no-cache")
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["Referrer-Policy"] = "no-referrer"
         if request.method == "GET" and resp.status_code == 200 and not resp.direct_passthrough:
             resp.add_etag()
             resp.make_conditional(request)
@@ -127,13 +129,13 @@ def create_app(config=None):
         conn = get_db()
         n_prices = conn.execute("SELECT COUNT(*) FROM prices").fetchone()[0]
         n_devices = conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0]
-        last = conn.execute("SELECT kind, target, status, detail, at FROM fetch_log "
+        # Ei palvelimen polkuja eikä ulkoisten palvelujen virheviestejä julkisesti.
+        last = conn.execute("SELECT kind, target, status, at FROM fetch_log "
                             "ORDER BY id DESC LIMIT 5").fetchall()
         resp = jsonify({
             "ok": True,
             "price_source": cfg.price_source,
             "entsoe_token": bool(cfg.entsoe_token),
-            "db": cfg.db_path,
             "prices_rows": n_prices,
             "devices": n_devices,
             "available": prices.available_days(conn, cfg.area),
@@ -144,7 +146,10 @@ def create_app(config=None):
 
     @app.get("/api/stats")
     def api_stats():
-        days = min(max(int(request.args.get("days", 365)), 7), 3660)
+        try:
+            days = min(max(int(request.args.get("days", 365)), 7), 3660)
+        except ValueError:
+            abort(400, "days ei ole kokonaisluku")
         conn = get_db()
         st, available = cached_stats(conn, days)
         return cache_for(jsonify({

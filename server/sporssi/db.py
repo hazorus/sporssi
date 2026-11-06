@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS fetch_log (
     at         INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS fetch_log_target ON fetch_log (kind, target, at);
+CREATE INDEX IF NOT EXISTS fetch_log_at ON fetch_log (at);
 
 CREATE TABLE IF NOT EXISTS weather (
     location_id TEXT    NOT NULL,
@@ -129,6 +130,23 @@ def log_fetch(conn, kind, target, source, status, detail=None):
         "INSERT INTO fetch_log (kind, target, source, status, detail, at) VALUES (?, ?, ?, ?, ?, ?)",
         (kind, target, source, status, detail, int(time.time())),
     )
+    conn.commit()
+
+
+# Rajapinnan kautta käynnistettävien ulkoisten hakujen yläraja (suojaa ENTSO-E/FMI-kiintiöitä ja
+# tietokantaa, jos joku kyselee mielivaltaisia päiviä tai koordinaatteja).
+FETCH_BUDGET = 60          # hakua ...
+FETCH_BUDGET_WINDOW = 600  # ... 10 minuutissa
+
+
+def fetch_budget_left(conn):
+    since = int(time.time()) - FETCH_BUDGET_WINDOW
+    n = conn.execute("SELECT COUNT(*) FROM fetch_log WHERE at >= ?", (since,)).fetchone()[0]
+    return n < FETCH_BUDGET
+
+
+def prune_fetch_log(conn, keep_days=90):
+    conn.execute("DELETE FROM fetch_log WHERE at < ?", (int(time.time()) - keep_days * 86400,))
     conn.commit()
 
 

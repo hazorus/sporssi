@@ -135,3 +135,8 @@ export function helsinkiToUtc(isoDate, h = 0, m = 0) {
   }
   return t;
 }
+
+// HTML-merkkien suojaus tekstille, joka päätyy kaavioiden HTML-vihjeisiin (esim. omien laitteiden nimet).
+export function esc(text) {
+  return String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}

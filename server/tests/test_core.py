@@ -191,3 +191,35 @@ def test_incomplete_future_day_cached_until_publish(tmp_path, monkeypatch):
         assert abs(age - expected) <= 2
     else:
         assert age == 300
+
+
+def test_lazy_fetch_limits(tmp_path, monkeypatch):
+    from sporssi import prices as pr, heating as ht
+    conn = db.connect(str(tmp_path / "l.sqlite3"))
+    db.init_db(conn)
+    db.ensure_reference_data(conn, Config().reference_data)
+    calls = []
+    monkeypatch.setattr(pr, "fetch_range", lambda *a, **k: calls.append(a) or 0)
+    cfg = Config(db_path=":memory:")
+    today = pr.today_local()
+    pr.ensure_day(conn, cfg, today - timedelta(days=30))   # liian vanha: ei haeta
+    assert calls == []
+    pr.ensure_day(conn, cfg, today - timedelta(days=2))
+    assert len(calls) == 1
+    # budjetti täynnä: ei hakuja
+    for i in range(db.FETCH_BUDGET):
+        db.log_fetch(conn, "prices", f"x{i}", "test", "ok")
+    pr.ensure_day(conn, cfg, today - timedelta(days=3))
+    assert len(calls) == 1
+    wcalls = []
+    monkeypatch.setattr(ht, "refresh_weather", lambda *a, **k: wcalls.append(a))
+    ht.ensure_weather(conn, ht.get_location(conn, "helsinki"), today)
+    assert wcalls == []
+
+
+def test_api_bad_days_and_health(tmp_path):
+    app = create_app(Config(db_path=str(tmp_path / "h.sqlite3"), lazy_fetch=False))
+    c = app.test_client()
+    assert c.get("/api/stats?days=abc").status_code == 400
+    h = c.get("/api/health")
+    assert "db" not in h.get_json() and h.headers["X-Content-Type-Options"] == "nosniff"

@@ -19,6 +19,7 @@ from .sources import fmi
 from .timeutil import HEL, iso_utc, local_day_bounds, today_local
 
 WEATHER_REFRESH = 60 * 60
+LAZY_PAST_DAYS = 31  # menneiden päivien havainnot haetaan rajapinnan kautta enintään kuukauden taakse
 
 
 def _loads(text, default=None):
@@ -105,6 +106,10 @@ def fetch_past_day(conn, location, day):
 
 def ensure_weather(conn, location, day, now=None):
     today = today_local(now)
+    if day < today - timedelta(days=LAZY_PAST_DAYS) or day > today + timedelta(days=10):
+        return
+    if not db.fetch_budget_left(conn):
+        return
     try:
         if day >= today - timedelta(days=1):
             last = db.last_fetch_at(conn, "weather", location["id"])

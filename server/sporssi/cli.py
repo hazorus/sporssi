@@ -22,6 +22,7 @@ def cmd_update(cfg, conn, args):
     _, end = local_day_bounds(today + timedelta(days=1))
     n = prices.fetch_range(conn, cfg, start, end)
     print(f"Hinnat: {n} riviä ({cfg.price_source})")
+    db.prune_fetch_log(conn)
     places = args.locations.split(",") if args.locations else ["helsinki"]
     for loc_id in places:
         try:
