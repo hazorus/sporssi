@@ -1,7 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import { api } from './lib/api.js';
-  import { load, loadList, save } from './lib/storage.js';
+  import { load, loadList, loadOr, save } from './lib/storage.js';
+  import { colorScheme } from './lib/chart.svelte.js';
   import {
     DEFAULT_SETTINGS, userPrice, bands as makeBands, normalizeSlots, toHours, hhmm, dayLabel,
     localDate, addDays, fmtPrice, CLASS_LABELS, classify,
@@ -13,6 +14,7 @@
   import CostTable from './components/CostTable.svelte';
   import Heating from './components/Heating.svelte';
   import Settings from './components/Settings.svelte';
+  import NowCosts from './components/NowCosts.svelte';
 
   const DEFAULT_HEATING = {
     enabled: false, location: 'helsinki', system: 'ilp', mode: 'era', area: 120,
@@ -20,11 +22,19 @@
   };
 
   let settings = $state(load('sporssi.settings', DEFAULT_SETTINGS));
-  let selection = $state(load('sporssi.selection', {}));
+  // Ensikäynnillä valittuna tyypillisimmät kodinkoneet.
+  const DEFAULT_SELECTION = Object.fromEntries([
+    ['pyykinpesukone-60', '18:00'], ['astianpesukone', '19:00'], ['vedenkeitin', '07:00'],
+    ['sahkouuni', '17:00'], ['liesi', '17:00'], ['mikroaaltouuni', '12:00'],
+    ['kuivausrumpu-lp', '20:00'], ['kiuas', '18:00'],
+  ].map(([id, start]) => [id, { start }]));
+  const oldSelection = loadOr('sporssi.selection', {});
+  let selection = $state(loadOr('sporssi.selection.v2',
+    Object.keys(oldSelection).length ? oldSelection : DEFAULT_SELECTION));
   let custom = $state(loadList('sporssi.custom'));
   let heatCfg = $state(load('sporssi.heating', DEFAULT_HEATING));
   $effect(() => save('sporssi.settings', $state.snapshot(settings)));
-  $effect(() => save('sporssi.selection', $state.snapshot(selection)));
+  $effect(() => save('sporssi.selection.v2', $state.snapshot(selection)));
   $effect(() => save('sporssi.custom', $state.snapshot(custom)));
   $effect(() => save('sporssi.heating', $state.snapshot(heatCfg)));
 
@@ -43,16 +53,21 @@
   let heatError = $state('');
   let heatLoading = $state(false);
 
+  const inflight = new Set();
   async function fetchDay(d, force = false) {
     const have = days[d];
     if (have && have.complete && !force) return;
     if (have && !force && Date.now() - have.at < 5 * 60000) return;
+    if (inflight.has(d)) return;
+    inflight.add(d);
     try {
       const res = await api.prices(d);
       days[d] = { slots: normalizeSlots(res.slots), complete: res.complete, at: Date.now() };
       loadError = '';
     } catch (e) {
       loadError = `Hintojen haku epäonnistui: ${e.message}`;
+    } finally {
+      inflight.delete(d);
     }
   }
 
@@ -62,11 +77,17 @@
     api.heatingOptions().then((r) => { heatOptions = r; }).catch(() => {});
     const timer = setInterval(() => {
       nowMs = Date.now();
-      for (const d of [addDays(date, -1), date, addDays(date, 1)]) {
+      for (const d of new Set([addDays(date, -1), date, addDays(date, 1), today, addDays(today, 1)])) {
         if (days[d] && !days[d].complete && d <= addDays(today, 1)) fetchDay(d);
       }
     }, 60000);
     return () => clearInterval(timer);
+  });
+
+  // Käyttö nyt -kaaviot tarvitsevat aina tämän päivän ja huomisen hinnat.
+  $effect(() => {
+    fetchDay(today);
+    fetchDay(addDays(today, 1));
   });
 
   $effect(() => {
@@ -89,6 +110,21 @@
     return m;
   });
   const priceAt = $derived((t) => priceMap.get(t) ?? null);
+
+  const scheme = colorScheme();
+  const nowPrices = $derived.by(() => {
+    const m = new Map();
+    let last = 0;
+    for (const d of [today, addDays(today, 1)]) {
+      for (const s of days[d]?.slots ?? []) {
+        if (s.spot === null) continue;
+        m.set(s.t, userPrice(s.spot, settings));
+        last = Math.max(last, s.t);
+      }
+    }
+    return { map: m, last };
+  });
+  const nowPriceAt = $derived((t) => nowPrices.map.get(t) ?? null);
 
   const summary = $derived.by(() => {
     const vals = daySlots.filter((s) => s.spot !== null).map((s) => ({ t: s.t, v: userPrice(s.spot, settings), spot: s.spot }));
@@ -162,6 +198,11 @@
   {#if loadError}<p class="error">{loadError}</p>{/if}
 
   <section class="card">
+    <h2>Laitteiden käyttö nyt</h2>
+    <NowCosts devices={scheduled} priceAt={nowPriceAt} {nowMs} lastKnownMs={nowPrices.last} {scheme} {unit} />
+  </section>
+
+  <section class="card">
     <div class="row nav">
       <button type="button" disabled={!canPrev} onclick={() => (date = addDays(date, -1))}>◀ Edellinen</button>
       <button type="button" disabled={date === today} onclick={() => (date = today)}>Tänään</button>
@@ -203,7 +244,7 @@
         värialueet eivät vielä kuvaa vuoden tasoa. Ylläpitäjä: aja <code>python -m sporssi.cli backfill --days 400</code>.</p>
     {/if}
     {#if summary}
-      <PriceChart rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit} />
+      <PriceChart {scheme} rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit} />
       <div class="row small legend">
         {#each ['cheap', 'green', 'yellow', 'red'] as c}
           <span><span class="swatch c-{c}"></span> {CLASS_LABELS[c]}</span>

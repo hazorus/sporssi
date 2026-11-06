@@ -3,7 +3,8 @@
   import echarts from '../lib/echarts.js';
   import { classify, userPrice, hhmm, CLASS_LABELS, fmtPrice } from '../lib/pricing.js';
 
-  let { rows, settings, bands, nowMs, unit } = $props();
+  let { rows, settings, bands, nowMs, unit, scheme } = $props();
+  let width = $state(0);
   let el;
   let chart;
 
@@ -25,6 +26,9 @@
     const fixed = !settings.autoScale;
     const yMin = Number(settings.yMin);
     const yMax = Number(settings.yMax);
+    // Palkin leveys pikseleinä ratkaisee, mahtuuko hinta palkkiin.
+    const barPx = width ? (width - 64) / Math.max(1, rows.length) : 0;
+    const labelMode = barPx >= 30 ? 'flat' : barPx >= 15 ? 'rotated' : 'none';
     const data = rows.map((r, i) => {
       const v = values[i];
       const cls = classify(r.spot, bands);
@@ -35,8 +39,15 @@
         cls,
         itemStyle: { color: colors[cls], ...(clipped ? { decal: { symbol: 'rect', dashArrayX: [1, 0], dashArrayY: [2, 3] } } : {}) },
         label: clipped
-          ? { show: true, position: v > yMax ? 'insideTop' : 'insideBottom', formatter: fmtPrice(v, 0), color: '#fff', fontSize: 10 }
-          : { show: false },
+          ? { show: true, position: v > yMax ? 'insideTop' : 'insideBottom', formatter: fmtPrice(v, labelMode === 'flat' ? 1 : 0), color: '#fff', fontSize: 10, rotate: labelMode === 'rotated' ? 90 : 0 }
+          : labelMode === 'none' || v === null
+            ? { show: false }
+            : {
+                show: true, position: v < 0 ? 'bottom' : 'top', formatter: fmtPrice(v, 1),
+                color: text, fontSize: labelMode === 'flat' ? 11 : 10,
+                rotate: labelMode === 'rotated' ? 90 : 0, align: labelMode === 'rotated' ? 'left' : 'center',
+                verticalAlign: 'middle', distance: labelMode === 'rotated' ? 4 : 6,
+              },
       };
     });
     const bandAreas = [];
@@ -67,7 +78,7 @@
     }
     return {
       animation: false,
-      grid: { left: 48, right: 16, top: 34, bottom: 36 },
+      grid: { left: 48, right: 16, top: labelMode === 'rotated' ? 44 : 34, bottom: 36 },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
@@ -111,16 +122,15 @@
 
   onMount(() => {
     chart = echarts.init(el, null, { renderer: 'canvas' });
-    const ro = new ResizeObserver(() => chart.resize());
+    width = el.clientWidth;
+    const ro = new ResizeObserver(() => { width = el.clientWidth; chart.resize(); });
     ro.observe(el);
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const redraw = () => chart.setOption(buildOption(), true);
-    mq.addEventListener('change', redraw);
-    return () => { ro.disconnect(); mq.removeEventListener('change', redraw); chart.dispose(); };
+    return () => { ro.disconnect(); chart.dispose(); };
   });
 
   $effect(() => {
-    // riippuvuudet: rows, settings, bands, nowMs
+    // riippuvuudet: rows, settings, bands, nowMs, width, teema
+    scheme?.dark;
     const opt = buildOption();
     chart?.setOption(opt, true);
   });

@@ -21,3 +21,14 @@ export function loadList(key) {
 export function save(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ei tallennusta */ }
 }
+
+// Kuten load, mutta tallennettua arvoa ei yhdistetä oletukseen (esim. laitevalinnat:
+// käyttäjän poistamat oletuslaitteet eivät saa palata).
+export function loadOr(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}

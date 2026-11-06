@@ -115,3 +115,8 @@ export function fmtKwh(v) {
   const digits = v !== 0 && Math.abs(v) < 0.1 ? 3 : 2;
   return v.toLocaleString('fi-FI', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
+
+const wdFmt = new Intl.DateTimeFormat('fi-FI', { timeZone: TZ, weekday: 'short' });
+export function weekdayShort(ms) {
+  return wdFmt.format(new Date(ms));
+}

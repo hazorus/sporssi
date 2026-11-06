@@ -3,11 +3,15 @@
 Web-sovellus, joka näyttää Suomen pörssisähkön hinnan tunneittain tai varteittain ja laskee
 kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin hinnalla.
 
+- **Käyttö nyt**: valittujen laitteiden käyttökustannus, jos ne käynnistetään heti, sekä kaavio
+  käyttökertojen hinnasta eri aloitusaikoina niin pitkälle kuin hintoja on (euroina tai prosentteina
+  heti käynnistämisen hinnasta). Ensikäynnillä valittuna ovat tyypillisimmät kodinkoneet.
 - **Hintakaavio ja -taulukko**: kuluva vuorokausi, edellinen ja seuraava päivä (huomisen hinnat
   julkaistaan n. klo 13.45). Valinta tunti / 15 min.
 - **Kiinteä asteikko**: pystyakseli on oletuksena aina sama (−5…40 c/kWh), jotta päiviä voi verrata
   silmämääräisesti. Asteikon ylittävät pylväät leikataan ja niihin merkitään hinta. Automaattisen
-  skaalauksen voi valita asetuksista.
+  skaalauksen voi valita asetuksista. Kun palkit ovat tarpeeksi leveitä, hinta näytetään palkin päällä.
+  Sivu käyttää koko selainikkunan leveyden.
 - **Värit**: palvelin laskee tietokannan historiasta viimeisen 12 kk aikapainotetun keskihinnan ja
   keskihajonnan. Kaavion **vihreä** alue = keskihinta ± hajonta, **keltainen** = yli vihreän
   alueen, **punainen** = yli keskihinta + 2 × hajonta. Kertoimet voi muuttaa asetuksista.
