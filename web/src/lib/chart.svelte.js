@@ -28,3 +28,9 @@ export function colorScheme() {
   mq.addEventListener('change', (e) => { dark = e.matches; });
   return { get dark() { return dark; } };
 }
+
+// Kapea näyttö (puhelin): kaaviot käyttävät pienempiä marginaaleja ja eri asettelua.
+const mqNarrow = typeof window !== 'undefined' ? window.matchMedia('(max-width: 640px)') : null;
+let narrowState = $state(mqNarrow?.matches ?? false);
+mqNarrow?.addEventListener('change', (e) => { narrowState = e.matches; });
+export const screen = { get narrow() { return narrowState; } };

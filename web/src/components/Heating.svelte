@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import echarts from '../lib/echarts.js';
+  import { screen } from '../lib/chart.svelte.js';
   import { hhmm, fmtKwh, fmtPrice, fmtEur } from '../lib/pricing.js';
 
   let { options, cfg = $bindable(), data, error, loading, water, costHours = [], geoStatus = '', onlocate } = $props();
@@ -44,8 +45,14 @@
     const waterName = cfg.waterMode === DISTRICT ? 'Lämmin vesi (kaukolämpö) €' : 'Lämmin vesi €';
     return {
       animation: false,
-      grid: { left: 52, right: 44, top: 32, bottom: 30 },
-      legend: { top: 0, textStyle: { color: muted }, data: [heatName, waterName, 'Ulkolämpötila °C'] },
+      grid: screen.narrow
+        ? { left: 2, right: 2, top: 34, bottom: 32, containLabel: true }
+        : { left: 52, right: 44, top: 32, bottom: 30 },
+      legend: {
+        ...(screen.narrow ? { bottom: 0, left: 0, itemWidth: 16, itemGap: 8 } : { top: 0 }),
+        textStyle: { color: muted, fontSize: screen.narrow ? 11 : 12 },
+        data: [heatName, waterName, 'Ulkolämpötila °C'],
+      },
       tooltip: {
         trigger: 'axis',
         formatter: (ps) => {
@@ -206,5 +213,6 @@
   .controls { margin: .6rem 0; align-items: flex-end; }
   .locate { white-space: nowrap; }
   .chart { width: 100%; height: 240px; }
+  @media (max-width: 640px) { .chart { height: 280px; } }
   h3.water { margin-top: 1rem; }
 </style>

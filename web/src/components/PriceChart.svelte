@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import echarts from '../lib/echarts.js';
+  import { screen } from '../lib/chart.svelte.js';
   import { classify, userPrice, hhmm, CLASS_LABELS, fmtPrice } from '../lib/pricing.js';
 
   let { rows, settings, bands, nowMs, unit, scheme } = $props();
@@ -78,7 +79,9 @@
     }
     return {
       animation: false,
-      grid: { left: 48, right: 16, top: labelMode === 'rotated' ? 44 : 34, bottom: 36 },
+      grid: screen.narrow
+        ? { left: 2, right: 4, top: labelMode === 'rotated' ? 40 : 30, bottom: 4, containLabel: true }
+        : { left: 48, right: 16, top: labelMode === 'rotated' ? 44 : 34, bottom: 36 },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },

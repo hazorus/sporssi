@@ -1,5 +1,5 @@
 <script>
-  import { echart, cssVar } from '../lib/chart.svelte.js';
+  import { echart, cssVar, screen } from '../lib/chart.svelte.js';
   import { runCost, bestStart, deviceEnergy } from '../lib/cost.js';
   import { SLOT_MS, hhmm, weekdayShort, fmtEur, fmtKwh, fmtPrice } from '../lib/pricing.js';
 
@@ -60,9 +60,13 @@
     const muted = cssVar('--muted');
     const border = cssVar('--border');
     const list = [...rows].reverse(); // ensimmäinen ylimpänä
+    const narrow = screen.narrow;
     return {
       animation: false,
-      grid: { left: 8, right: 70, top: 8, bottom: 24, containLabel: true },
+      // Puhelimessa laitteen nimi on palkin yläpuolella, jolloin palkit saavat koko leveyden.
+      grid: narrow
+        ? { left: 2, right: 48, top: 18, bottom: 4 }
+        : { left: 8, right: 70, top: 8, bottom: 24, containLabel: true },
       tooltip: {
         trigger: 'item',
         formatter: (p) => {
@@ -77,16 +81,20 @@
       },
       xAxis: {
         type: 'value', min: 0,
-        axisLabel: { color: muted, formatter: (v) => `${fmtPrice(v, v < 1 ? 2 : 1)} €` },
+        axisLabel: { show: !narrow, color: muted, formatter: (v) => `${fmtPrice(v, v < 1 ? 2 : 1)} €` },
         splitLine: { lineStyle: { color: border } },
       },
       yAxis: {
         type: 'category', data: list.map((r) => r.dev.name),
-        axisLabel: { color: cssVar('--text') }, axisTick: { show: false },
+        axisLabel: narrow
+          ? { inside: true, align: 'left', verticalAlign: 'bottom', padding: [0, 0, 9, 0], color: cssVar('--text'), fontSize: 12 }
+          : { color: cssVar('--text') },
+        axisTick: { show: false },
         axisLine: { lineStyle: { color: border } },
+        z: 3,
       },
       series: [{
-        type: 'bar', barMaxWidth: 22,
+        type: 'bar', barMaxWidth: 22, ...(narrow ? { barWidth: 12 } : {}),
         data: list.map((r) => ({
           value: r.eur === null ? null : Math.max(0, r.eur),
           itemStyle: { color: cssVar('--accent') },
@@ -99,19 +107,25 @@
     };
   });
 
+  // Puhelimessa selite rivitetään kaavion alle; arvio riveistä (2 nimeä riviä kohden).
+  const legendRows = $derived(screen.narrow ? Math.ceil(rows.length / 2) : 0);
   const futureOption = $derived.by(() => {
     scheme.dark;
     const muted = cssVar('--muted');
     const border = cssVar('--border');
+    const narrow = screen.narrow;
     const midnight = starts.findIndex((t, i) => i > 0 && hhmm(t) === '00:00');
     const fmt = (v) => (v === null || v === undefined ? '–' : relative ? `${Math.round(v)} %` : fmtEur(v));
     return {
       animation: false,
-      grid: { left: 8, right: 16, top: 40, bottom: 28, containLabel: true },
+      grid: narrow
+        ? { left: 2, right: 6, top: 22, bottom: legendRows * 22 + 8, containLabel: true }
+        : { left: 8, right: 16, top: 40, bottom: 28, containLabel: true },
       legend: {
-        type: 'scroll', top: 0, formatter: legendFormatter,
+        ...(narrow ? { type: 'plain', bottom: 0, left: 0, itemWidth: 16, itemGap: 6 } : { type: 'scroll', top: 0 }),
+        formatter: legendFormatter,
         textStyle: {
-          color: muted,
+          color: muted, fontSize: narrow ? 11 : 12,
           rich: { hi: { color: cssVar('--text'), fontWeight: 'bold', backgroundColor: cssVar('--row-alt'), padding: [2, 4], borderRadius: 3 } },
         },
       },
@@ -162,7 +176,7 @@
   <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
 {:else}
   <h3>Jos käynnistät nyt (klo {hhmm(nowStart)})</h3>
-  <div class="chart" style="height: {Math.max(140, 34 + usable.length * 34)}px" use:echart={nowOption}></div>
+  <div class="chart" style="height: {Math.max(140, (screen.narrow ? 22 : 34) + usable.length * (screen.narrow ? 42 : 34))}px" use:echart={nowOption}></div>
   <p class="small muted">Kustannus lasketaan käytön ajan varttihinnoilla ({unit}) alkaen kuluvasta vartista.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 
@@ -175,7 +189,7 @@
     </div>
   </div>
   {#if starts.length > 1}
-    <div class="chart" style="height: 320px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
+    <div class="chart" style="height: {320 + legendRows * 22}px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
     <p class="small muted">Jokainen viiva näyttää, mitä laitteen käyttökerta maksaa, jos se käynnistetään kyseisellä
       tunnilla{#if relative}, prosentteina siitä, mitä se maksaisi heti käynnistettynä{/if}. Viiva päättyy, kun käyttö
       jatkuisi yli tunnettujen hintojen. Laitteen voi piilottaa napsauttamalla sen nimeä.</p>
