@@ -119,13 +119,13 @@
               {#if save >= 0.005}
                 <span>
                   {#if screen.narrow}
-                    Halvin <b>klo {hhmm(r.best.t)}</b>: {fmtEur(r.best.eur)} (−{fmtEur(save)})
+                    Halvin {fmtEur(r.best.eur)} (−{fmtEur(save)})
                   {:else}
                     Halvin aloitus {isToday ? 'loppupäivänä' : 'tänä päivänä'} <b>klo {hhmm(r.best.t)}</b>: {fmtEur(r.best.eur)}
                     (säästö {fmtEur(save)})
                   {/if}
                 </span>
-                <button type="button" title="Siirrä aloitus halvimpaan aikaan" onclick={() => set(dev, 'start', hhmm(r.best.t))}>Siirrä</button>
+                <button type="button" title="Siirrä aloitus halvimpaan aikaan" onclick={() => set(dev, 'start', hhmm(r.best.t))}>{screen.narrow ? `Siirrä klo ${hhmm(r.best.t)}` : 'Siirrä'}</button>
               {:else}<span class="pill">valittu aika on halvin</span>{/if}
             </p>
           {:else if r.eur === null}
@@ -210,7 +210,7 @@
     .picker-col { order: 0; }  /* puhelimessa valitut ensin, luettelo alla */
   }
   details.cat { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 .5rem; padding: .35rem .7rem; }
-  details.cat > summary { display: flex; gap: .5rem; align-items: center; font-size: .85rem; color: var(--muted); padding: .15rem 0; }
+  details.cat > summary { display: flex; gap: .5rem; align-items: center; color: var(--muted); padding: .15rem 0; }
   details.cat[open] > summary { margin-bottom: .2rem; }
   details.cat > summary { list-style: none; cursor: pointer; }
   details.cat > summary::-webkit-details-marker { display: none; }
@@ -220,7 +220,7 @@
   .pick input { flex: none; width: 1.1rem; height: 1.1rem; }
   .pname { flex: 1; min-width: 0; }
   .spec { white-space: nowrap; }
-  .x { padding: 0 .4rem; font-size: .8rem; line-height: 1.6; }
+  .x { padding: 0 .45rem; line-height: 1.5; }
   .dev { border-bottom: 1px solid var(--border); padding: .6rem 0; }
   .dev-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
   .dev-head .name { flex: 1 1 12rem; }
@@ -234,7 +234,7 @@
   .best { margin: .35rem 0 0; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
   .best button { padding: .15rem .6rem; }
   @media (max-width: 640px) {
-    .best { flex-wrap: nowrap; justify-content: space-between; font-size: .8rem; }
+    .best { flex-wrap: nowrap; justify-content: space-between; }
     .best > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .best button { flex: none; }
   }

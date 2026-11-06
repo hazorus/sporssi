@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { api } from './lib/api.js';
   import { load, loadList, loadOr, save } from './lib/storage.js';
-  import { colorScheme } from './lib/chart.svelte.js';
+  import { colorScheme, screen } from './lib/chart.svelte.js';
   import {
     DEFAULT_SETTINGS, userPrice, bands as makeBands, normalizeSlots, toHours, hhmm, dayLabel,
     localDate, addDays, fmtPrice, CLASS_LABELS, classify,
@@ -208,9 +208,9 @@
   // Loppusummataulukko: kodinkoneet yhtenä sarakkeena + lämmin vesi + rakennuksen lämmitys.
   const tableColumns = $derived([
     { key: 'appliances', name: 'Kodinkoneet', short: 'Koneet', title: 'Valittujen kodinkoneiden yhteenlaskettu kulutus' },
-    { key: 'water', name: 'Lämmin vesi', short: waterDistrict ? 'Vesi (KL)' : 'Vesi',
+    { key: 'water', name: 'Lämmin vesi', short: waterDistrict ? 'Vesi (KL)' : 'Vesi', tiny: waterDistrict ? 'Vesi KL' : 'Vesi',
       title: waterDistrict ? 'Lämmin vesi (kaukolämpö)' : 'Lämmin vesi' },
-    { key: 'heating', name: 'Rakennuksen lämmitys', short: district ? 'Lämmitys (KL)' : 'Lämmitys',
+    { key: 'heating', name: 'Rakennuksen lämmitys', short: district ? 'Lämmitys (KL)' : 'Lämmitys', tiny: district ? 'Lämm. KL' : 'Lämm.',
       title: district ? 'Rakennuksen lämmitys (kaukolämpö)' : 'Rakennuksen lämmitys' },
   ]);
   const tableDevices = $derived([
@@ -364,7 +364,7 @@
 
   <section class="card">
     <h2>Kulutus ja kustannukset {settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}</h2>
-    <p class="small muted">Kulutus kWh ja kustannus €; sähkön hinta {unit}.</p>
+    <p class="small muted">Kulutus kWh ja kustannus €; sähkön hinta {unit}{#if screen.narrow} (sarake c){/if}.</p>
     {#if district || waterDistrict}
       <p class="small muted">KL = kaukolämpö. Kaukolämmön sarakkeissa kWh on lämpöenergiaa ja hinta lasketaan kaukolämmön
         energiamaksulla {fmtPrice(Number(heatCfg.dhPrice))} c/kWh (perusmaksu ei sisälly). Ne eivät kuluta sähköä.</p>

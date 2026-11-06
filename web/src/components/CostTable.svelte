@@ -37,19 +37,19 @@
     <thead>
       <tr>
         <th rowspan="2">Klo</th>
-        <th rowspan="2" class="num" title="Sähkön hinta">{unit}</th>
-        {#each columns as c (c.key)}<th colspan={span} class="dev" title={c.title ?? c.name}>{c.short ?? c.name}</th>{/each}
-        <th colspan="2" class="dev" title="Yhteensä">Yht.</th>
+        <th rowspan="2" class="num" title="Sähkön hinta {unit}">{narrow ? 'c' : unit}</th>
+        {#each columns as c (c.key)}<th colspan={span} class="dev" title={c.title ?? c.name}>{narrow ? (c.tiny ?? c.short ?? c.name) : (c.short ?? c.name)}</th>{/each}
+        <th colspan={span} class="dev" title="Yhteensä">Yht.</th>
       </tr>
       <tr>
         {#each columns as c (c.key)}{#if !narrow}<th class="num">kWh</th>{/if}<th class="num">€</th>{/each}
-        <th class="num">kWh</th><th class="num">€</th>
+        {#if !narrow}<th class="num">kWh</th>{/if}<th class="num">€</th>
       </tr>
     </thead>
     <tbody>
       {#each rows as r (r.t)}
         <tr class:now={nowMs >= r.t && nowMs < r.t + step * 60000}>
-          <td>{hhmm(r.t)}</td>
+          <td>{narrow && step === 60 ? hhmm(r.t).slice(0, 2) : hhmm(r.t)}</td>
           <td class="num">{fmtPrice(r.price)}</td>
           {#each columns as c (c.key)}
             {@const cell = r.cells[c.key]}
@@ -61,7 +61,7 @@
               {#if !narrow}<td class="num muted"></td>{/if}<td class="num muted"></td>
             {/if}
           {/each}
-          <td class="num"><b>{r.total.kwh ? fmtKwh(r.total.kwh) : ''}</b></td>
+          {#if !narrow}<td class="num"><b>{r.total.kwh ? fmtKwh(r.total.kwh) : ''}</b></td>{/if}
           <td class="num"><b>{r.total.kwh ? num(r.total.eur) : ''}</b></td>
         </tr>
       {/each}
@@ -74,7 +74,7 @@
           {#if !narrow}<th class="num">{fmtKwh(t.kwh)}</th>{/if}
           <th class="num">{num(t.eur)}{t.unknown ? '*' : ''}</th>
         {/each}
-        <th class="num">{fmtKwh(grand.kwh)}</th>
+        {#if !narrow}<th class="num">{fmtKwh(grand.kwh)}</th>{/if}
         <th class="num">{num(grand.eur)}{grand.unknown ? '*' : ''}</th>
       </tr>
     </tfoot>
@@ -90,7 +90,6 @@
 <style>
   th.dev { text-align: center; border-left: 1px solid var(--border); white-space: nowrap; }
   @media (max-width: 640px) {
-    table { font-size: .78rem; }
     th, td { padding: .25rem .2rem; }
   }
   tfoot th { color: var(--text); border-top: 2px solid var(--border); }

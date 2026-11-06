@@ -61,14 +61,15 @@ input[type='checkbox'] { accent-color: var(--accent); }
   padding: 1rem; margin-bottom: 1rem;
 }
 .muted { color: var(--muted); }
-.small { font-size: .85rem; }
+/* .small ei enää pienennä tekstiä: kaikki teksti vähintään 1rem */
+.small { font-size: 1rem; }
 .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .spacer { flex: 1; }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+table { border-collapse: collapse; width: 100%; font-size: 1rem; }
 th, td { padding: .3rem .45rem; border-bottom: 1px solid var(--border); }
-th { text-align: left; font-weight: 600; color: var(--muted); font-size: .8rem; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 1rem; }
 tbody tr:nth-child(even) { background: var(--row-alt); }
 tr.now td { outline: 2px solid var(--now); outline-offset: -2px; }
 .swatch { display: inline-block; width: .8rem; height: .8rem; border-radius: 3px; vertical-align: -1px; }
@@ -78,7 +79,7 @@ tr.now td { outline: 2px solid var(--now); outline-offset: -2px; }
 .c-red { background: var(--red); }
 .c-none { background: var(--none); }
 .pill {
-  display: inline-block; padding: .05rem .45rem; border-radius: 999px; font-size: .78rem;
+  display: inline-block; padding: .05rem .45rem; border-radius: 999px; font-size: 1rem;
   border: 1px solid var(--border);
 }
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
@@ -87,5 +88,7 @@ tr.now td { outline: 2px solid var(--now); outline-offset: -2px; }
 details > summary { cursor: pointer; }
 .error { color: var(--red); }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
-label.field { display: flex; flex-direction: column; gap: .15rem; font-size: .85rem; color: var(--muted); }
+label.field { display: flex; flex-direction: column; gap: .15rem; font-size: 1rem; color: var(--muted); }
 label.field > input, label.field > select { color: var(--text); }
+label.field { min-width: 0; max-width: 100%; }
+select, input { max-width: 100%; }
