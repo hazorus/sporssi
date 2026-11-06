@@ -72,3 +72,9 @@ test('saman avaimen laitteet summataan', () => {
   close(totals.k.kwh, 3);
   close(totals.k.eur, 0.3);
 });
+
+test('Suomen aika -> UTC (talvi- ja kesäaika)', async () => {
+  const { helsinkiToUtc } = await import('./pricing.js');
+  assert.equal(new Date(helsinkiToUtc('2026-11-06', 14, 0)).toISOString(), '2026-11-06T12:00:00.000Z');
+  assert.equal(new Date(helsinkiToUtc('2026-07-01', 14, 0)).toISOString(), '2026-07-01T11:00:00.000Z');
+});

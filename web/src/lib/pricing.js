@@ -121,3 +121,17 @@ const wdFmt = new Intl.DateTimeFormat('fi-FI', { timeZone: TZ, weekday: 'short' 
 export function weekdayShort(ms) {
   return wdFmt.format(new Date(ms));
 }
+
+// Suomen paikallinen aika (VVVV-KK-PP, tunti, minuutti) -> UTC ms. Huomioi kesäajan.
+export function helsinkiToUtc(isoDate, h = 0, m = 0) {
+  const [y, mo, d] = isoDate.split('-').map(Number);
+  let t = Date.UTC(y, mo - 1, d, h, m);
+  for (let i = 0; i < 2; i++) {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+      timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(new Date(t)).map((x) => [x.type, x.value]));
+    const shown = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute);
+    t += Date.UTC(y, mo - 1, d, h, m) - shown;
+  }
+  return t;
+}

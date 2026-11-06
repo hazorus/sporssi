@@ -1,5 +1,5 @@
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -154,9 +154,9 @@ def test_http_cache_headers_and_etag(tmp_path):
     etag = r.headers["ETag"]
     r2 = c.get("/api/prices?date=2026-01-15", headers={"If-None-Match": etag})
     assert r2.status_code == 304
-    # keskeneräinen päivä: ei välimuistia
+    # keskeneräinen mennyt päivä (aukko tiedoissa): ei muutu -> 1 vrk
     r3 = c.get("/api/prices?date=2026-01-16")
-    assert r3.headers["Cache-Control"] == "no-cache"
+    assert "max-age=86400" in r3.headers["Cache-Control"]
     assert "max-age=3600" in c.get("/api/devices").headers["Cache-Control"]
     assert c.get("/api/health").headers["Cache-Control"] == "no-store"
 
@@ -169,5 +169,25 @@ def test_stats_cache_invalidates_on_new_prices(tmp_path):
     db.upsert_prices(conn, "FI", [(now - 7200 + i * 900, 15, 100.0) for i in range(4)], "test")
     assert c.get("/api/stats").get_json()["stats"]["mean"] == 10.0
     assert c.get("/api/stats").get_json()["stats"]["mean"] == 10.0  # välimuistista
+    # historia vajaa -> uudet hinnat päivittävät tilaston heti
     db.upsert_prices(conn, "FI", [(now - 3600 + i * 900, 15, 300.0) for i in range(4)], "test")
-    assert c.get("/api/stats").get_json()["stats"]["mean"] == 20.0
+    r = c.get("/api/stats")
+    assert r.get_json()["stats"]["mean"] == 20.0
+    age = int(r.headers["Cache-Control"].split("max-age=")[1])
+    assert 60 <= age <= 25 * 3600  # keskiyöhön asti
+
+
+def test_incomplete_future_day_cached_until_publish(tmp_path, monkeypatch):
+    from sporssi import app as app_module
+    app = create_app(Config(db_path=str(tmp_path / "f.sqlite3"), lazy_fetch=False))
+    c = app.test_client()
+    tomorrow = (app_module.today_local() + timedelta(days=1)).isoformat()
+    r = c.get(f"/api/prices?date={tomorrow}")
+    age = int(r.headers["Cache-Control"].split("max-age=")[1])
+    now = datetime.now(app_module.HEL)
+    publish = now.replace(hour=14, minute=0, second=0, microsecond=0)
+    expected = int((publish - now).total_seconds())
+    if expected > 60:
+        assert abs(age - expected) <= 2
+    else:
+        assert age == 300

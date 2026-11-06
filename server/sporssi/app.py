@@ -2,14 +2,13 @@
 
 import json
 import threading
-import time
-from datetime import date, timedelta
+from datetime import date, datetime, time as dtime, timedelta
 
 from flask import Flask, abort, g, jsonify, request
 
 from . import db, heating, prices
 from .config import Config
-from .timeutil import today_local
+from .timeutil import HEL, today_local
 
 
 def _loads(text, default=None):
@@ -57,20 +56,40 @@ def create_app(config=None):
             resp.make_conditional(request)
         return resp
 
-    # 12 kk tilasto lasketaan uudelleen vain, kun hintoja on tullut lisää tai tunti on kulunut.
+    PUBLISH_AT = dtime(14, 0)  # seuraavan päivän hinnat julkaistaan n. klo 13.45 Suomen aikaa
+    LATE_RECHECK = 300         # jos julkaisu myöhästyy, tarkistetaan 5 min välein
+
+    def seconds_until(moment):
+        return int((moment - datetime.now(HEL)).total_seconds())
+
+    def seconds_to_midnight():
+        tomorrow = today_local() + timedelta(days=1)
+        return max(60, seconds_until(datetime.combine(tomorrow, dtime(0), HEL)))
+
+    def incomplete_max_age(day):
+        """Keskeneräinen päivä ei muutu ennen kuin sen hinnat julkaistaan (edellisenä päivänä klo 14)."""
+        if day < today_local():
+            return 86400  # mennyt päivä, jonka tiedoissa on aukko: ei muutu
+        secs = seconds_until(datetime.combine(day - timedelta(days=1), PUBLISH_AT, HEL))
+        return secs if secs > 60 else LATE_RECHECK
+
+    # 12 kk tilasto lasketaan kerran vuorokaudessa. Poikkeus: jos historia on vielä vajaa
+    # (esim. heti asennuksen jälkeen), lasketaan uudelleen, kun hintoja tulee lisää.
     stats_cache = {}
     stats_lock = threading.Lock()
 
     def cached_stats(conn, days):
-        stamp = tuple(conn.execute(
-            "SELECT COUNT(*), MAX(fetched_at) FROM prices WHERE area = ?", (cfg.area,)).fetchone())
+        today = today_local()
+        count = conn.execute("SELECT COUNT(*) FROM prices WHERE area = ?", (cfg.area,)).fetchone()[0]
         with stats_lock:
             hit = stats_cache.get(days)
-            if hit and hit[0] == stamp and time.time() - hit[1] < 3600:
-                return hit[2]
+        if hit and hit["day"] == today:
+            st = hit["value"][0]
+            if (st and st["coverage"] >= 0.9) or hit["count"] == count:
+                return hit["value"]
         value = (prices.stats(conn, cfg.area, days), prices.available_days(conn, cfg.area))
         with stats_lock:
-            stats_cache[days] = (stamp, time.time(), value)
+            stats_cache[days] = {"day": today, "count": count, "value": value}
         return value
 
     def parse_day(value):
@@ -97,10 +116,11 @@ def create_app(config=None):
             "complete": complete,
             "slots": slots,
         })
-        # Valmis päivä ei enää muutu: menneet päivät 30 vrk, tänään/huomenna 1 h.
+        # Valmis päivä ei enää muutu: menneet päivät 30 vrk, tänään/huomenna 1 vrk.
+        # Keskeneräinen päivä (huominen ennen julkaisua) julkaisuhetkeen asti.
         if not complete:
-            return cache_for(resp, 0)
-        return cache_for(resp, YEAR_MONTH if day < today_local() else 3600)
+            return cache_for(resp, incomplete_max_age(day))
+        return cache_for(resp, YEAR_MONTH if day < today_local() else 86400)
 
     @app.get("/api/health")
     def api_health():
@@ -133,7 +153,7 @@ def create_app(config=None):
             "unit": "c/kWh, ALV 0 %",
             "stats": st,
             "available": available,
-        }), 600)
+        }), seconds_to_midnight())
 
     @app.get("/api/devices")
     def api_devices():

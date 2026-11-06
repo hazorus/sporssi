@@ -113,14 +113,17 @@ SPORSSI_DB=/var/lib/sporssi/sporssi.sqlite3 python3 scripts/update_reference_dat
 ## Välimuisti
 
 - **Palvelin**: kaikki hinnat ja säähavainnot tallennetaan SQLiteen; valmista päivää ei haeta lähteestä
-  uudelleen, puuttuvaa enintään 10 min välein, säätä enintään tunnin välein. 12 kk tilasto pidetään
-  muistissa ja lasketaan uudelleen vain, kun hintoja tulee lisää (tai tunnin välein).
+  uudelleen, puuttuvaa enintään 10 min välein, säätä enintään tunnin välein. 12 kk tilasto lasketaan
+  kerran vuorokaudessa (vajaalla historialla myös uusien hintojen tullessa).
 - **HTTP**: jokaisella GET-vastauksella on ETag (muuttumattomasta vastauksesta 304). Valmiin menneen
-  päivän hinnat `max-age` 30 vrk, valmiin tämän/huomisen päivän 1 h, keskeneräinen `no-cache`;
-  tilasto 10 min, sää ja lämmitys 10 min (yli päivän vanhat 1 vrk), laitteet 1 h, `/api/health` ei lainkaan.
+  päivän hinnat `max-age` 30 vrk, valmiin tämän/huomisen päivän 1 vrk. Keskeneräinen päivä
+  (esim. huominen ennen julkaisua) julkaisuhetkeen asti, eli edellisen päivän klo 14:ään; jos julkaisu
+  myöhästyy, 5 min. Tilasto keskiyöhön asti, sää ja lämmitys 10 min (yli päivän vanhat 1 vrk),
+  laitteet 1 h, `/api/health` ei lainkaan.
   Apachen mod_deflate lisää ETagiin päätteen `-gzip`; jotta 304 toimisi, lisää
   `DeflateAlterETag NoChange` (Apache 2.4.58+). Ilman sitä välimuistiajat toimivat silti.
-- **Selain**: ladatut päivät ja lämmitysarviot (10 min) muistetaan käyttökerran ajan.
+- **Selain**: ladatut päivät ja lämmitysarviot (10 min) muistetaan käyttökerran ajan; keskeneräistä
+  päivää ei kysytä uudelleen ennen julkaisuhetkeä.
 - **Service worker**: rajapinta verkosta 4 s aikarajalla, muuten tallennetusta vastauksesta; sivulla
   näkyy silloin "Ei verkkoyhteyttä – näytetään … tallennetut tiedot". Tallennetuista
   rajapintavastauksista säilytetään 14 viimeistä päivää, ja vanhat käännetyt tiedostot poistetaan,

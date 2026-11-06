@@ -6,7 +6,7 @@
   import { colorScheme, screen } from './lib/chart.svelte.js';
   import {
     DEFAULT_SETTINGS, userPrice, bands as makeBands, normalizeSlots, toHours, hhmm, dayLabel,
-    localDate, addDays, fmtPrice, CLASS_LABELS, classify,
+    localDate, addDays, fmtPrice, CLASS_LABELS, classify, helsinkiToUtc,
   } from './lib/pricing.js';
   import { startMsFor, schedule, scheduleToHours } from './lib/cost.js';
   import PriceChart from './components/PriceChart.svelte';
@@ -65,7 +65,12 @@
   async function fetchDay(d, force = false) {
     const have = days[d];
     if (have && have.complete && !force) return;
-    if (have && !force && Date.now() - have.at < 5 * 60000) return;
+    // Keskeneräisen päivän hinnat julkaistaan edellisenä päivänä n. klo 14: ennen sitä ei kysytä
+    // uudelleen, ja sen jälkeen (myöhästynyt julkaisu) enintään 5 min välein.
+    if (have && !force) {
+      const publish = helsinkiToUtc(addDays(d, -1), 14, 0);
+      if (Date.now() < publish || Date.now() - have.at < 5 * 60000) return;
+    }
     if (inflight.has(d)) return;
     inflight.add(d);
     try {
