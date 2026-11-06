@@ -159,7 +159,7 @@
 </script>
 
 {#if usable.length === 0}
-  <p class="muted">Valitse alempaa laitteita, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
+  <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
 {:else}
   <h3>Jos käynnistät nyt (klo {hhmm(nowStart)})</h3>
   <div class="chart" style="height: {Math.max(140, 34 + usable.length * 34)}px" use:echart={nowOption}></div>

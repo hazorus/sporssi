@@ -284,7 +284,11 @@
   {#if loadError}<p class="error">{loadError}</p>{/if}
 
   <section class="card">
-    <h2>Laitteiden käyttö nyt</h2>
+    <div class="row">
+      <h2>Laitteiden käyttö nyt</h2>
+      <span class="spacer"></span>
+      <a class="small" href="#laitteet">Valitse laitteet ({scheduled.length}) ↓</a>
+    </div>
     <NowCosts devices={scheduled} priceAt={nowPriceAt} {nowMs} lastKnownMs={nowPrices.last} {scheme} {unit} />
   </section>
 
@@ -345,13 +349,13 @@
   </section>
 
   <section class="card">
-    <h2>Laitteet</h2>
-    <Devices catalog={appliances} bind:custom bind:selection {daySlots} {priceAt} {nowMs} isToday={date === today} />
-  </section>
-
-  <section class="card">
     <h2>Rakennuksen lämmitys ja lämmin vesi</h2>
     <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} costHours={heatCostHours} {geoStatus} onlocate={() => locate(true)} />
+  </section>
+
+  <section class="card" id="laitteet">
+    <h2>Laitteet</h2>
+    <Devices catalog={appliances} bind:custom bind:selection {daySlots} {priceAt} {nowMs} isToday={date === today} />
   </section>
 
   <section class="card">

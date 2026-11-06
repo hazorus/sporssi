@@ -31,6 +31,8 @@
   }
 }
 * { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+#laitteet { scroll-margin-top: 1rem; }
 body { margin: 0; background: var(--bg); }
 h1, h2, h3 { margin: 0 0 .5rem; line-height: 1.2; }
 h2 { font-size: 1.15rem; }
