@@ -21,6 +21,8 @@
     era: '1986-2002', annual_kwh: 15000, indoor: 21,
     // Lämmin vesi: Motiva, 4 hengen talo 3 670 kWh/v ≈ 2,5 kWh/hlö/vrk
     persons: 3, waterPerPerson: 2.5, waterMode: 'varaaja', waterStart: '02:00', waterPower: 3,
+    // Kaukolämmön energiamaksu c/kWh sis. ALV (perusmaksu ei mukana). Tarkista oma hinta lämpöyhtiöltä.
+    dhPrice: 10,
   };
 
   let settings = $state(load('sporssi.settings', DEFAULT_SETTINGS));
@@ -151,9 +153,13 @@
   );
 
   // Lämmin vesi: varaaja lämmittää vuorokauden tarpeen ajastettuna tai kulutus jaetaan tasaisesti.
+  const DISTRICT = 'kaukolampo';
+  const district = $derived(heatCfg.system === DISTRICT);
+  const waterDistrict = $derived(heatCfg.waterMode === DISTRICT);
+  const dhPriceAt = $derived(() => Number(heatCfg.dhPrice) || 0);
   const waterDev = $derived.by(() => {
     const kwh = Math.max(0, Number(heatCfg.persons) || 0) * Math.max(0, Number(heatCfg.waterPerPerson) || 0);
-    if (heatCfg.waterMode === 'tasainen') {
+    if (heatCfg.waterMode === 'tasainen' || heatCfg.waterMode === DISTRICT) {
       return { id: 'lammin-vesi', name: 'Lämmin vesi', kind: 'continuous', annual_kwh: kwh * 365, duration_min: 1440 };
     }
     const power = Math.max(0.5, Number(heatCfg.waterPower) || 3);
@@ -164,22 +170,26 @@
   });
 
   // Loppusummataulukko: kodinkoneet yhtenä sarakkeena + lämmin vesi + rakennuksen lämmitys.
-  const tableColumns = [
+  const tableColumns = $derived([
     { key: 'appliances', name: 'Kodinkoneet', title: 'Valittujen laitteiden yhteenlaskettu kulutus' },
-    { key: 'water', name: 'Lämmin vesi' },
-    { key: 'heating', name: 'Rakennuksen lämmitys' },
-  ];
+    { key: 'water', name: waterDistrict ? 'Lämmin vesi (kaukolämpö)' : 'Lämmin vesi' },
+    { key: 'heating', name: district ? 'Rakennuksen lämmitys (kaukolämpö)' : 'Rakennuksen lämmitys' },
+  ]);
   const tableDevices = $derived([
     ...scheduled.map((s) => ({ ...s, key: 'appliances' })),
-    { key: 'water', dev: waterDev, startMs: startMsFor(daySlots, waterDev.start ?? '00:00', hhmm) },
+    {
+      key: 'water', dev: waterDev, startMs: startMsFor(daySlots, waterDev.start ?? '00:00', hhmm),
+      ...(waterDistrict ? { priceAt: dhPriceAt } : {}),
+    },
   ]);
 
   // Lämmitys
   $effect(() => {
     const c = $state.snapshot(heatCfg);
     const d = date;
+    // Kaukolämmössä tarvitaan lämpöenergia: hyötysuhde 1 kuten suoralla sähköllä.
     const params = {
-      date: d, location: c.location, system: c.system, indoor: c.indoor,
+      date: d, location: c.location, system: c.system === DISTRICT ? 'suora' : c.system, indoor: c.indoor,
       ...(c.mode === 'era' ? { area: c.area, era: c.era } : { annual_kwh: c.annual_kwh }),
     };
     heatLoading = true;
@@ -196,6 +206,7 @@
     const byHour = new Map(ok ? heatData.hours.map((h) => [Date.parse(h.start), h.elec_kwh]) : []);
     return [{
       key: 'heating',
+      ...(district ? { priceAt: dhPriceAt } : {}),
       kwhAt: (t) => {
         const v = byHour.get(t - (t % 3600000));
         return v === null || v === undefined ? null : v / 4;
@@ -297,6 +308,10 @@
 
   <section class="card">
     <h2>Kulutus ja kustannukset {settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}</h2>
+    {#if district || waterDistrict}
+      <p class="small muted">Kaukolämmön sarakkeissa kWh on lämpöenergiaa ja hinta lasketaan kaukolämmön
+        energiamaksulla {fmtPrice(Number(heatCfg.dhPrice))} c/kWh (perusmaksu ei sisälly). Ne eivät kuluta sähköä.</p>
+    {/if}
     <CostTable {daySlots} columns={tableColumns} devices={tableDevices} extra={heatExtra} {priceAt} resolution={settings.resolution} {nowMs} {unit} />
   </section>
 

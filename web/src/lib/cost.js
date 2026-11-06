@@ -70,11 +70,13 @@ export function schedule(daySlots, devices, priceAt, extra = []) {
   const index = new Map(rows.map((r, i) => [r.t, i]));
   const totals = {};
   const newTotal = () => ({ kwh: 0, eur: 0, outside: 0, unknown: false });
-  for (const { key, dev, startMs } of devices) {
+  // Laitteella tai lisäsarakkeella voi olla oma hintafunktio (esim. kaukolämpö), muuten sähkön hinta.
+  for (const { key, dev, startMs, priceAt: own } of devices) {
+    const pf = own ?? priceAt;
     totals[key] ??= newTotal();
     if (dev.kind === 'continuous') {
       const perSlot = deviceEnergy(dev) / daySlots.length;
-      for (const r of rows) add(r, key, perSlot);
+      for (const r of rows) add(r, key, perSlot, pf);
       continue;
     }
     const parts = deviceSlotEnergy(dev);
@@ -85,24 +87,25 @@ export function schedule(daySlots, devices, priceAt, extra = []) {
         // Käyttö jatkuu seuraavalle vuorokaudelle: lasketaan laitteen kokonaissummaan.
         totals[key].outside += kwh;
         totals[key].kwh += kwh;
-        const p = priceAt(t);
+        const p = pf(t);
         if (p === null || p === undefined) totals[key].unknown = true;
         else totals[key].eur += (kwh * p) / 100;
-      } else add(rows[idx], key, kwh);
+      } else add(rows[idx], key, kwh, pf);
     });
   }
-  for (const { key, kwhAt } of extra) {
+  for (const { key, kwhAt, priceAt: own } of extra) {
     totals[key] ??= newTotal();
     for (const r of rows) {
       const kwh = kwhAt(r.t);
       if (kwh === null || kwh === undefined) {
         totals[key].unknown = true;
         r.cells[key] = { kwh: null, eur: null };
-      } else add(r, key, kwh);
+      } else add(r, key, kwh, own);
     }
   }
-  function add(r, key, kwh) {
-    const eur = r.price === null || r.price === undefined ? null : (kwh * r.price) / 100;
+  function add(r, key, kwh, pf) {
+    const p = pf ? pf(r.t) : r.price;
+    const eur = p === null || p === undefined ? null : (kwh * p) / 100;
     const c = r.cells[key];
     if (!c) r.cells[key] = { kwh, eur };
     else if (c.kwh !== null) {

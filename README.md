@@ -20,8 +20,8 @@ kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin h
   sähköauton lataus jne.). Jokaisella on oletusenergia, oletuskäyttöaika ja lähteet. Laitteen
   aloitusajan, keston ja kulutuksen voi muuttaa. Sovellus näyttää halvimman aloitusajan ja säästön.
 - **Omat laitteet**: teho (kW) tai energia per kerta (kWh) ja käyttöaika. Tallentuvat selaimeen.
-- **Sähkölämmitys**: suora sähkö, lattialämmitys, varaava, ilmalämpöpumppu, ilma-vesilämpöpumppu ja
-  maalämpö. Tarve arvioidaan Ilmatieteen laitoksen havainnoista ja ennusteesta (ks. alla).
+- **Lämmitys**: suora sähkö, lattialämmitys, varaava, ilmalämpöpumppu, ilma-vesilämpöpumppu,
+  maalämpö ja kaukolämpö (lämpöenergia × kaukolämmön energiamaksu, oletus 10 c/kWh, ilman perusmaksua). Tarve arvioidaan Ilmatieteen laitoksen havainnoista ja ennusteesta (ks. alla).
 - **Kulutus- ja kustannustaulukko** tunneittain tai varteittain: kodinkoneet yhteenlaskettuna,
   lämmin vesi ja rakennuksen lämmitys (kWh ja €) sekä summat. Lämmin vesi lasketaan henkilömäärästä
   (oletus 2,5 kWh/hlö/vrk, Motiva) joko ajastetulla varaajalla tai tasaisena kulutuksena.

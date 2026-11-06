@@ -1,13 +1,24 @@
 <script>
   import { onMount } from 'svelte';
   import echarts from '../lib/echarts.js';
-  import { hhmm, fmtKwh, fmtPrice } from '../lib/pricing.js';
+  import { hhmm, fmtKwh, fmtPrice, fmtEur } from '../lib/pricing.js';
 
   let { options, cfg = $bindable(), data, error, loading, water } = $props();
   let el = $state();
   let chart;
 
+  const DISTRICT = 'kaukolampo';
+  const district = $derived(cfg.system === DISTRICT);
   const system = $derived(options?.systems.find((s) => s.id === cfg.system));
+  let prevSystem = cfg.system;
+  // Kaukolämpötalossa käyttövesikin lämpenee yleensä kaukolämmöllä.
+  $effect(() => {
+    const s = cfg.system;
+    if (s === prevSystem) return;
+    if (s === DISTRICT) cfg.waterMode = DISTRICT;
+    else if (prevSystem === DISTRICT && cfg.waterMode === DISTRICT) cfg.waterMode = 'varaaja';
+    prevSystem = s;
+  });
   const location = $derived(options?.locations.find((l) => l.id === cfg.location));
   const era = $derived(options?.eras.find((e) => e.id === cfg.era));
 
@@ -20,13 +31,15 @@
     return {
       animation: false,
       grid: { left: 44, right: 44, top: 28, bottom: 30 },
-      legend: { top: 0, textStyle: { color: muted }, data: ['Lämmityssähkö kWh', 'Ulkolämpötila °C'] },
+      legend: { top: 0, textStyle: { color: muted }, data: [district ? 'Kaukolämpö kWh' : 'Lämmityssähkö kWh', 'Ulkolämpötila °C'] },
       tooltip: {
         trigger: 'axis',
         formatter: (ps) => {
           const h = hours[ps[0].dataIndex];
           return `${hhmm(Date.parse(h.start))}<br/>${fmtPrice(h.temp, 1)} °C (${h.kind === 'obs' ? 'havainto' : 'ennuste'})`
-            + `<br/>Lämpö ${fmtKwh(h.heat_kwh)} kWh<br/>Sähkö <b>${fmtKwh(h.elec_kwh)} kWh</b>`
+            + (district
+              ? `<br/>Kaukolämpö <b>${fmtKwh(h.heat_kwh)} kWh</b>`
+              : `<br/>Lämpö ${fmtKwh(h.heat_kwh)} kWh<br/>Sähkö <b>${fmtKwh(h.elec_kwh)} kWh</b>`)
             + (h.cop ? `<br/>COP ${fmtPrice(h.cop, 1)}` : '');
         },
       },
@@ -39,7 +52,7 @@
         { type: 'value', name: '°C', nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },
       ],
       series: [
-        { name: 'Lämmityssähkö kWh', type: 'bar', data: hours.map((h) => h.elec_kwh), itemStyle: { color: css('--accent') } },
+        { name: district ? 'Kaukolämpö kWh' : 'Lämmityssähkö kWh', type: 'bar', data: hours.map((h) => (district ? h.heat_kwh : h.elec_kwh)), itemStyle: { color: css('--accent') } },
         { name: 'Ulkolämpötila °C', type: 'line', yAxisIndex: 1, data: hours.map((h) => h.temp), smooth: true,
           symbol: 'none', lineStyle: { color: css('--now'), width: 2 }, itemStyle: { color: css('--now') } },
       ],
@@ -70,8 +83,13 @@
     <label class="field">Lämmitystapa
       <select bind:value={cfg.system}>
         {#each options.systems as s (s.id)}<option value={s.id}>{s.name}</option>{/each}
+        <option value={DISTRICT}>Kaukolämpö</option>
       </select>
     </label>
+    {#if district || cfg.waterMode === DISTRICT}
+      <label class="field">Kaukolämmön energiamaksu, c/kWh
+        <input type="number" min="0" step="0.1" bind:value={cfg.dhPrice} /></label>
+    {/if}
     <label class="field">Arvion peruste
       <select bind:value={cfg.mode}>
         <option value="era">pinta-ala ja rakennusvuosi</option>
@@ -94,7 +112,12 @@
   {#if error}<p class="error small">{error}</p>{/if}
   {#if data}
     <p class="small">
-      Arvioitu lämmityssähkö: <b>{fmtKwh(data.total_elec_kwh)} kWh</b> (lämpöenergiaa {fmtKwh(data.total_heat_kwh)} kWh).
+      {#if district}
+        Arvioitu kaukolämmön kulutus: <b>{fmtKwh(data.total_heat_kwh)} kWh</b>
+        ≈ {fmtEur((data.total_heat_kwh * (Number(cfg.dhPrice) || 0)) / 100)} energiamaksuna. Lämmitys ei kuluta sähköä.
+      {:else}
+        Arvioitu lämmityssähkö: <b>{fmtKwh(data.total_elec_kwh)} kWh</b> (lämpöenergiaa {fmtKwh(data.total_heat_kwh)} kWh).
+      {/if}
       Vuotuinen lämmitystarve {data.annual_heat_kwh.toLocaleString('fi-FI')} kWh,
       lämmitystarveluku {location?.degree_days.toLocaleString('fi-FI')} °Cd.
       {#if !data.complete}<span class="pill">osa tunneista ilman säätietoa</span>{/if}
@@ -112,6 +135,9 @@
       lämpöpumpun ulkopuolelle jäävä osuus ({Math.round((1 - (system?.coverage ?? 1)) * 100)} %) lasketaan suoralla sähköllä.
       Käyttöveden lämmitys lasketaan erikseen alla.
     </p>
+    {#if district}<p>Kaukolämmössä lämpöenergian kulutus lasketaan samalla mallilla, ja kustannus
+      kaukolämmön energiamaksulla (oletus 10 c/kWh sis. ALV; tarkista oma hinta lämpöyhtiöltä).
+      Kiinteää perusmaksua ei lasketa.</p>{/if}
     {#if system?.notes}<p>{system.notes}</p>{/if}
     <ul>
       {#each [...(system?.sources ?? []), ...(era?.sources ?? []), ...(location?.sources ?? [])] as s}
@@ -128,8 +154,9 @@
   <label class="field">kWh / henkilö / vrk <input type="number" min="0" step="0.1" bind:value={cfg.waterPerPerson} /></label>
   <label class="field">Lämmitys
     <select bind:value={cfg.waterMode}>
-      <option value="varaaja">varaaja, ajastettu</option>
-      <option value="tasainen">tasaisesti läpi vuorokauden</option>
+      <option value="varaaja">sähkövaraaja, ajastettu</option>
+      <option value="tasainen">sähkö, tasaisesti läpi vuorokauden</option>
+      <option value={DISTRICT}>kaukolämpö</option>
     </select>
   </label>
   {#if cfg.waterMode === 'varaaja'}
