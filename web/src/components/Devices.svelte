@@ -117,9 +117,15 @@
             {@const save = r.eur - r.best.eur}
             <p class="small best">
               {#if save >= 0.005}
-                Halvin aloitus {isToday ? 'loppupäivänä' : 'tänä päivänä'} <b>klo {hhmm(r.best.t)}</b>: {fmtEur(r.best.eur)}
-                (säästö {fmtEur(save)})
-                <button type="button" onclick={() => set(dev, 'start', hhmm(r.best.t))}>Siirrä</button>
+                <span>
+                  {#if screen.narrow}
+                    Halvin <b>klo {hhmm(r.best.t)}</b>: {fmtEur(r.best.eur)} (−{fmtEur(save)})
+                  {:else}
+                    Halvin aloitus {isToday ? 'loppupäivänä' : 'tänä päivänä'} <b>klo {hhmm(r.best.t)}</b>: {fmtEur(r.best.eur)}
+                    (säästö {fmtEur(save)})
+                  {/if}
+                </span>
+                <button type="button" title="Siirrä aloitus halvimpaan aikaan" onclick={() => set(dev, 'start', hhmm(r.best.t))}>Siirrä</button>
               {:else}<span class="pill">valittu aika on halvin</span>{/if}
             </p>
           {:else if r.eur === null}
@@ -225,7 +231,13 @@
     .fields { display: grid; grid-template-columns: repeat(3, 1fr); }
     .fields .field input { width: 100%; }
   }
-  .best { margin: .35rem 0 0; }
+  .best { margin: .35rem 0 0; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .best button { padding: .15rem .6rem; }
+  @media (max-width: 640px) {
+    .best { flex-wrap: nowrap; justify-content: space-between; font-size: .8rem; }
+    .best > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .best button { flex: none; }
+  }
   .add form { display: grid; gap: .5rem; margin-top: .5rem; }
   .sources { margin-top: .6rem; }
   .sources dl { margin: .4rem 0; }
