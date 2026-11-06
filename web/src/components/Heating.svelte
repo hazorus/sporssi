@@ -3,7 +3,16 @@
   import echarts from '../lib/echarts.js';
   import { hhmm, fmtKwh, fmtPrice, fmtEur } from '../lib/pricing.js';
 
-  let { options, cfg = $bindable(), data, error, loading, water } = $props();
+  let { options, cfg = $bindable(), data, error, loading, water, costHours = [] } = $props();
+  const costByHour = $derived(new Map(costHours.map((c) => [c.t, c])));
+  const dayCost = $derived.by(() => {
+    let heating = 0, water = 0, unknown = false;
+    for (const c of costHours) {
+      if (c.heating === null) unknown = true; else heating += c.heating;
+      if (c.water === null) unknown = true; else water += c.water;
+    }
+    return { heating, water, unknown };
+  });
   let el = $state();
   let chart;
 
@@ -28,19 +37,25 @@
     const hours = data?.hours ?? [];
     const muted = css('--muted');
     const border = css('--border');
+    const cost = hours.map((h) => costByHour.get(Date.parse(h.start)) ?? null);
+    const heatName = district ? 'Lämmitys (kaukolämpö) €' : 'Lämmitys €';
+    const waterName = cfg.waterMode === DISTRICT ? 'Lämmin vesi (kaukolämpö) €' : 'Lämmin vesi €';
     return {
       animation: false,
-      grid: { left: 44, right: 44, top: 28, bottom: 30 },
-      legend: { top: 0, textStyle: { color: muted }, data: [district ? 'Kaukolämpö kWh' : 'Lämmityssähkö kWh', 'Ulkolämpötila °C'] },
+      grid: { left: 52, right: 44, top: 32, bottom: 30 },
+      legend: { top: 0, textStyle: { color: muted }, data: [heatName, waterName, 'Ulkolämpötila °C'] },
       tooltip: {
         trigger: 'axis',
         formatter: (ps) => {
-          const h = hours[ps[0].dataIndex];
-          return `${hhmm(Date.parse(h.start))}<br/>${fmtPrice(h.temp, 1)} °C (${h.kind === 'obs' ? 'havainto' : 'ennuste'})`
-            + (district
-              ? `<br/>Kaukolämpö <b>${fmtKwh(h.heat_kwh)} kWh</b>`
-              : `<br/>Lämpö ${fmtKwh(h.heat_kwh)} kWh<br/>Sähkö <b>${fmtKwh(h.elec_kwh)} kWh</b>`)
-            + (h.cop ? `<br/>COP ${fmtPrice(h.cop, 1)}` : '');
+          const i = ps[0].dataIndex;
+          const h = hours[i];
+          const c = cost[i];
+          const total = c && c.heating !== null && c.water !== null ? c.heating + c.water : null;
+          return `${hhmm(Date.parse(h.start))}–${hhmm(Date.parse(h.start) + 3600000)}`
+            + `<br/>${fmtPrice(h.temp, 1)} °C (${h.kind === 'obs' ? 'havainto' : 'ennuste'})`
+            + `<br/>Lämmitys: <b>${fmtEur(c?.heating)}</b> (${fmtKwh(c?.heatingKwh)} kWh${district ? ' kaukolämpöä' : ' sähköä'}${h.cop ? `, COP ${fmtPrice(h.cop, 1)}` : ''})`
+            + `<br/>Lämmin vesi: <b>${fmtEur(c?.water)}</b> (${fmtKwh(c?.waterKwh)} kWh)`
+            + `<br/>Yhteensä: <b>${fmtEur(total)}</b>`;
         },
       },
       xAxis: {
@@ -48,11 +63,13 @@
         axisLabel: { color: muted, interval: 1 }, axisLine: { lineStyle: { color: border } }, axisTick: { show: false },
       },
       yAxis: [
-        { type: 'value', name: 'kWh', min: 0, nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { lineStyle: { color: border } } },
+        { type: 'value', name: '€ / h', nameTextStyle: { color: muted },
+          axisLabel: { color: muted, formatter: (v) => `${fmtPrice(v, 2)} €` }, splitLine: { lineStyle: { color: border } } },
         { type: 'value', name: '°C', nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },
       ],
       series: [
-        { name: district ? 'Kaukolämpö kWh' : 'Lämmityssähkö kWh', type: 'bar', data: hours.map((h) => (district ? h.heat_kwh : h.elec_kwh)), itemStyle: { color: css('--accent') } },
+        { name: heatName, type: 'bar', stack: 'cost', data: cost.map((c) => c?.heating ?? null), itemStyle: { color: css('--accent') } },
+        { name: waterName, type: 'bar', stack: 'cost', data: cost.map((c) => c?.water ?? null), itemStyle: { color: css('--cheap'), opacity: 0.6 } },
         { name: 'Ulkolämpötila °C', type: 'line', yAxisIndex: 1, data: hours.map((h) => h.temp), smooth: true,
           symbol: 'none', lineStyle: { color: css('--now'), width: 2 }, itemStyle: { color: css('--now') } },
       ],
@@ -112,6 +129,8 @@
   {#if error}<p class="error small">{error}</p>{/if}
   {#if data}
     <p class="small">
+      Tämän vuorokauden kustannus: lämmitys <b>{fmtEur(dayCost.heating)}</b>, lämmin vesi <b>{fmtEur(dayCost.water)}</b>,
+      yhteensä <b>{fmtEur(dayCost.heating + dayCost.water)}</b>{dayCost.unknown ? ' (osa tunneista puuttuu)' : ''}.<br />
       {#if district}
         Arvioitu kaukolämmön kulutus: <b>{fmtKwh(data.total_heat_kwh)} kWh</b>
         ≈ {fmtEur((data.total_heat_kwh * (Number(cfg.dhPrice) || 0)) / 100)} energiamaksuna. Lämmitys ei kuluta sähköä.

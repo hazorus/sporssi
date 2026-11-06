@@ -7,7 +7,7 @@
     DEFAULT_SETTINGS, userPrice, bands as makeBands, normalizeSlots, toHours, hhmm, dayLabel,
     localDate, addDays, fmtPrice, CLASS_LABELS, classify,
   } from './lib/pricing.js';
-  import { startMsFor } from './lib/cost.js';
+  import { startMsFor, schedule, scheduleToHours } from './lib/cost.js';
   import PriceChart from './components/PriceChart.svelte';
   import PriceTable from './components/PriceTable.svelte';
   import Devices from './components/Devices.svelte';
@@ -214,6 +214,19 @@
     }];
   });
 
+  // Lämmityksen ja lämpimän veden tuntikustannukset lämmitysosion kaaviota varten.
+  const heatCostHours = $derived.by(() => {
+    const waterEntry = tableDevices.find((d) => d.key === 'water');
+    const res = schedule(daySlots, waterEntry ? [waterEntry] : [], priceAt, heatExtra);
+    return scheduleToHours(res.rows).map((r) => ({
+      t: r.t,
+      heating: r.cells.heating?.eur ?? null,
+      heatingKwh: r.cells.heating?.kwh ?? null,
+      water: r.cells.water?.eur ?? 0,
+      waterKwh: r.cells.water?.kwh ?? 0,
+    }));
+  });
+
   const canNext = $derived(date < addDays(today, 1));
   const canPrev = $derived(!available || date > available.first);
   const tomorrowPending = $derived(date === addDays(today, 1) && cur && !cur.complete);
@@ -303,7 +316,7 @@
 
   <section class="card">
     <h2>Rakennuksen lämmitys ja lämmin vesi</h2>
-    <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} />
+    <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} costHours={heatCostHours} />
   </section>
 
   <section class="card">
