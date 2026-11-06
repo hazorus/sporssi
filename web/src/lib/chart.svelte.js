@@ -1,13 +1,18 @@
-// Svelte-action ECharts-kaaviolle: <div use:echart={option}>. Päivittyy optionin muuttuessa.
+// Svelte-action ECharts-kaaviolle: <div use:echart={option}> tai <div use:echart={{ option, setup }}>,
+// jossa setup(chart) voi kytkeä tapahtumankäsittelijät. Päivittyy optionin muuttuessa.
 import echarts from './echarts.js';
 
-export function echart(node, option) {
+const optionOf = (arg) => (arg && arg.option !== undefined ? arg.option : arg);
+
+export function echart(node, arg) {
   const chart = echarts.init(node);
+  const option = optionOf(arg);
   if (option) chart.setOption(option, true);
+  if (arg && typeof arg.setup === 'function') arg.setup(chart);
   const ro = new ResizeObserver(() => chart.resize());
   ro.observe(node);
   return {
-    update(next) { if (next) chart.setOption(next, true); },
+    update(next) { const o = optionOf(next); if (o) chart.setOption(o, true); },
     destroy() { ro.disconnect(); chart.dispose(); },
   };
 }

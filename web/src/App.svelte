@@ -17,8 +17,10 @@
   import NowCosts from './components/NowCosts.svelte';
 
   const DEFAULT_HEATING = {
-    enabled: false, location: 'helsinki', system: 'ilp', mode: 'era', area: 120,
+    location: 'helsinki', system: 'ilp', mode: 'era', area: 120,
     era: '1986-2002', annual_kwh: 15000, indoor: 21,
+    // Lämmin vesi: Motiva, 4 hengen talo 3 670 kWh/v ≈ 2,5 kWh/hlö/vrk
+    persons: 3, waterPerPerson: 2.5, waterMode: 'varaaja', waterStart: '02:00', waterPower: 3,
   };
 
   let settings = $state(load('sporssi.settings', DEFAULT_SETTINGS));
@@ -137,7 +139,10 @@
   });
 
   // Valitut laitteet aikataulua varten
-  const allDevices = $derived([...catalog, ...custom]);
+  // Lämmin vesi lasketaan lämmitysosion asetuksista, ei laitelistasta.
+  const WATER_IDS = new Set(['lamminvesivaraaja']);
+  const appliances = $derived(catalog.filter((d) => !WATER_IDS.has(d.id)));
+  const allDevices = $derived([...appliances, ...custom]);
   const scheduled = $derived(
     allDevices.filter((d) => selection[d.id]).map((d) => {
       const dev = { ...d, ...selection[d.id] };
@@ -145,11 +150,34 @@
     }),
   );
 
+  // Lämmin vesi: varaaja lämmittää vuorokauden tarpeen ajastettuna tai kulutus jaetaan tasaisesti.
+  const waterDev = $derived.by(() => {
+    const kwh = Math.max(0, Number(heatCfg.persons) || 0) * Math.max(0, Number(heatCfg.waterPerPerson) || 0);
+    if (heatCfg.waterMode === 'tasainen') {
+      return { id: 'lammin-vesi', name: 'Lämmin vesi', kind: 'continuous', annual_kwh: kwh * 365, duration_min: 1440 };
+    }
+    const power = Math.max(0.5, Number(heatCfg.waterPower) || 3);
+    return {
+      id: 'lammin-vesi', name: 'Lämmin vesi', kind: 'power', power_kw: power,
+      duration_min: Math.max(1, Math.round((kwh / power) * 60)), start: heatCfg.waterStart,
+    };
+  });
+
+  // Loppusummataulukko: kodinkoneet yhtenä sarakkeena + lämmin vesi + rakennuksen lämmitys.
+  const tableColumns = [
+    { key: 'appliances', name: 'Kodinkoneet', title: 'Valittujen laitteiden yhteenlaskettu kulutus' },
+    { key: 'water', name: 'Lämmin vesi' },
+    { key: 'heating', name: 'Rakennuksen lämmitys' },
+  ];
+  const tableDevices = $derived([
+    ...scheduled.map((s) => ({ ...s, key: 'appliances' })),
+    { key: 'water', dev: waterDev, startMs: startMsFor(daySlots, waterDev.start ?? '00:00', hhmm) },
+  ]);
+
   // Lämmitys
   $effect(() => {
     const c = $state.snapshot(heatCfg);
     const d = date;
-    if (!c.enabled) { heatData = null; return; }
     const params = {
       date: d, location: c.location, system: c.system, indoor: c.indoor,
       ...(c.mode === 'era' ? { area: c.area, era: c.era } : { annual_kwh: c.annual_kwh }),
@@ -164,11 +192,10 @@
     return () => clearTimeout(timer);
   });
   const heatExtra = $derived.by(() => {
-    if (!heatCfg.enabled || !heatData || heatData.date !== date) return [];
-    const byHour = new Map(heatData.hours.map((h) => [Date.parse(h.start), h.elec_kwh]));
-    const name = heatOptions?.systems.find((s) => s.id === heatData.system)?.name ?? 'Lämmitys';
+    const ok = heatData && heatData.date === date;
+    const byHour = new Map(ok ? heatData.hours.map((h) => [Date.parse(h.start), h.elec_kwh]) : []);
     return [{
-      key: 'heating', name: `Lämmitys: ${name}`,
+      key: 'heating',
       kwhAt: (t) => {
         const v = byHour.get(t - (t % 3600000));
         return v === null || v === undefined ? null : v / 4;
@@ -184,7 +211,7 @@
 <div class="wrap">
   <header class="row head">
     <div>
-      <h1>Sporssi</h1>
+      <h1>Spörssi</h1>
       <p class="muted small">Pörssisähkön hinta ja kodin laitteiden käyttökustannukset</p>
     </div>
     <span class="spacer"></span>
@@ -260,17 +287,17 @@
 
   <section class="card">
     <h2>Laitteet</h2>
-    <Devices catalog={catalog} bind:custom bind:selection {daySlots} {priceAt} {nowMs} isToday={date === today} />
+    <Devices catalog={appliances} bind:custom bind:selection {daySlots} {priceAt} {nowMs} isToday={date === today} />
   </section>
 
   <section class="card">
-    <h2>Sähkölämmitys</h2>
-    <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} />
+    <h2>Rakennuksen lämmitys ja lämmin vesi</h2>
+    <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} />
   </section>
 
   <section class="card">
     <h2>Kulutus ja kustannukset {settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}</h2>
-    <CostTable {daySlots} devices={scheduled} extra={heatExtra} {priceAt} resolution={settings.resolution} {nowMs} {unit} />
+    <CostTable {daySlots} columns={tableColumns} devices={tableDevices} extra={heatExtra} {priceAt} resolution={settings.resolution} {nowMs} {unit} />
   </section>
 
   <footer class="small muted">

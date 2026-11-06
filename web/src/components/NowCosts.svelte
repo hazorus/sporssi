@@ -7,6 +7,24 @@
   let { devices, priceAt, nowMs, lastKnownMs, scheme, unit } = $props();
 
   let relative = $state(false);
+
+  // Hiiren alla olevan laitteen nimi korostetaan selitteessä ja työkaluvihjeessä.
+  let hovered = null;
+  function legendFormatter(name) {
+    return name === hovered ? `{hi|${name}}` : name;
+  }
+  function setupFuture(chart) {
+    const set = (name) => {
+      if (name === hovered) return;
+      hovered = name;
+      chart.setOption({ legend: { formatter: legendFormatter } });
+    };
+    chart.on('mouseover', { componentType: 'series' }, (p) => set(p.seriesName));
+    chart.on('mouseout', { componentType: 'series' }, () => set(null));
+    chart.on('highlight', (e) => { if (e.name) set(e.name); });
+    chart.on('downplay', () => set(null));
+    chart.on('globalout', () => set(null));
+  }
   const nowStart = $derived(Math.floor(nowMs / SLOT_MS) * SLOT_MS);
   const usable = $derived(devices.filter((d) => d.dev.kind !== 'continuous'));
   const skipped = $derived(devices.filter((d) => d.dev.kind === 'continuous'));
@@ -51,7 +69,7 @@
           const r = list[p.dataIndex];
           let s = `<b>${r.dev.name}</b><br/>${fmtKwh(deviceEnergy(r.dev))} kWh, ${r.dev.duration_min} min`
             + `<br/>Aloitus nyt: <b>${fmtEur(r.eur)}</b>${r.approx ? ' (arvio nykyhinnalla)' : ''}`;
-          if (r.best && r.eur !== null && r.best.eur < r.eur - 0.0005) {
+          if (r.best && r.eur !== null && r.best.eur < r.eur - 0.005) {
             s += `<br/>Halvin aloitus ${label(r.best.t)}: ${fmtEur(r.best.eur)}`;
           }
           return s;
@@ -90,11 +108,24 @@
     return {
       animation: false,
       grid: { left: 8, right: 16, top: 40, bottom: 28, containLabel: true },
-      legend: { type: 'scroll', top: 0, textStyle: { color: muted } },
+      legend: {
+        type: 'scroll', top: 0, formatter: legendFormatter,
+        textStyle: {
+          color: muted,
+          rich: { hi: { color: cssVar('--text'), fontWeight: 'bold', backgroundColor: cssVar('--row-alt'), padding: [2, 4], borderRadius: 3 } },
+        },
+      },
       tooltip: {
         trigger: 'axis',
-        order: 'valueAsc',
-        valueFormatter: fmt,
+        formatter: (ps) => {
+          const items = [...ps].filter((p) => p.value !== null && p.value !== undefined)
+            .sort((a, b) => a.value - b.value);
+          const head = ps.length ? ps[0].name : '';
+          return `Aloitus ${head}<br/>` + items.map((p) => {
+            const line = `${p.marker}${p.seriesName}: ${fmt(p.value)}`;
+            return p.seriesName === hovered ? `<b>${line}</b>` : line;
+          }).join('<br/>');
+        },
       },
       xAxis: {
         type: 'category', data: starts.map(label), boundaryGap: false,
@@ -107,11 +138,13 @@
         splitLine: { lineStyle: { color: border } },
       },
       series: rows.map((r, i) => ({
-        name: r.dev.name, type: 'line', showSymbol: false, connectNulls: false,
+        name: r.dev.name, type: 'line', showSymbol: false, connectNulls: false, triggerLineEvent: true,
+        lineStyle: { width: 2 },
         data: relative
           ? r.series.map((v) => (v === null || !(r.series[0] > 0.00001) ? null : (100 * v) / r.series[0]))
           : r.series,
-        emphasis: { focus: 'series' },
+        emphasis: { focus: 'series', lineStyle: { width: 4 } },
+        blur: { lineStyle: { opacity: 0.25 } },
         ...(i === 0 && midnight > 0 ? {
           markLine: {
             silent: true, symbol: 'none',
@@ -142,7 +175,7 @@
     </div>
   </div>
   {#if starts.length > 1}
-    <div class="chart" style="height: 320px" use:echart={futureOption}></div>
+    <div class="chart" style="height: 320px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
     <p class="small muted">Jokainen viiva näyttää, mitä laitteen käyttökerta maksaa, jos se käynnistetään kyseisellä
       tunnilla{#if relative}, prosentteina siitä, mitä se maksaisi heti käynnistettynä{/if}. Viiva päättyy, kun käyttö
       jatkuisi yli tunnettujen hintojen. Laitteen voi piilottaa napsauttamalla sen nimeä.</p>

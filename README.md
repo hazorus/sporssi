@@ -1,4 +1,4 @@
-# Sporssi – pörssisähkö ja kodin laitteiden käyttökustannukset
+# Spörssi – pörssisähkö ja kodin laitteiden käyttökustannukset
 
 Web-sovellus, joka näyttää Suomen pörssisähkön hinnan tunneittain tai varteittain ja laskee
 kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin hinnalla.
@@ -22,7 +22,10 @@ kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin h
 - **Omat laitteet**: teho (kW) tai energia per kerta (kWh) ja käyttöaika. Tallentuvat selaimeen.
 - **Sähkölämmitys**: suora sähkö, lattialämmitys, varaava, ilmalämpöpumppu, ilma-vesilämpöpumppu ja
   maalämpö. Tarve arvioidaan Ilmatieteen laitoksen havainnoista ja ennusteesta (ks. alla).
-- **Kulutus- ja kustannustaulukko** tunneittain tai varteittain: kunkin laitteen kWh ja € sekä summat.
+- **Kulutus- ja kustannustaulukko** tunneittain tai varteittain: kodinkoneet yhteenlaskettuna,
+  lämmin vesi ja rakennuksen lämmitys (kWh ja €) sekä summat. Lämmin vesi lasketaan henkilömäärästä
+  (oletus 2,5 kWh/hlö/vrk, Motiva) joko ajastetulla varaajalla tai tasaisena kulutuksena.
+- Kustannukset näytetään sentin tarkkuudella.
 - Hinnaksi voi valita pelkän spot-hinnan (ALV 0) tai kuluttajahinnan (ALV, marginaali, siirto, sähkövero).
 
 ## Rakenne

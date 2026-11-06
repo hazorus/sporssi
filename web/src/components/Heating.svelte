@@ -3,7 +3,7 @@
   import echarts from '../lib/echarts.js';
   import { hhmm, fmtKwh, fmtPrice } from '../lib/pricing.js';
 
-  let { options, cfg = $bindable(), data, error, loading } = $props();
+  let { options, cfg = $bindable(), data, error, loading, water } = $props();
   let el = $state();
   let chart;
 
@@ -59,11 +59,8 @@
   });
 </script>
 
-<div class="row">
-  <label><input type="checkbox" bind:checked={cfg.enabled} /> <b>Ota sähkölämmitys mukaan laskelmiin</b></label>
-</div>
-
-{#if cfg.enabled && options}
+<h3>Rakennuksen lämmitys</h3>
+{#if options}
   <div class="row controls">
     <label class="field">Paikkakunta
       <select bind:value={cfg.location}>
@@ -113,7 +110,7 @@
       eroon ulkolämpötilan ja 17 °C:n välillä (sisälämpö 21 °C; muut lämmönlähteet kattavat loput).
       Lämpötilat ovat Ilmatieteen laitoksen havaintoja ja ennusteita. Lämpöpumpun sähkönkulutus = lämpö / COP;
       lämpöpumpun ulkopuolelle jäävä osuus ({Math.round((1 - (system?.coverage ?? 1)) * 100)} %) lasketaan suoralla sähköllä.
-      Käyttöveden lämmitys ei sisälly (valitse laitteista lämminvesivaraaja).
+      Käyttöveden lämmitys lasketaan erikseen alla.
     </p>
     {#if system?.notes}<p>{system.notes}</p>{/if}
     <ul>
@@ -124,7 +121,32 @@
   </details>
 {/if}
 
+
+<h3 class="water">Lämmin vesi</h3>
+<div class="row controls">
+  <label class="field">Henkilöitä <input type="number" min="0" max="20" step="1" bind:value={cfg.persons} /></label>
+  <label class="field">kWh / henkilö / vrk <input type="number" min="0" step="0.1" bind:value={cfg.waterPerPerson} /></label>
+  <label class="field">Lämmitys
+    <select bind:value={cfg.waterMode}>
+      <option value="varaaja">varaaja, ajastettu</option>
+      <option value="tasainen">tasaisesti läpi vuorokauden</option>
+    </select>
+  </label>
+  {#if cfg.waterMode === 'varaaja'}
+    <label class="field">Alkaa klo <input type="time" step="900" bind:value={cfg.waterStart} /></label>
+    <label class="field">Vastuksen teho, kW <input type="number" min="0.5" step="0.5" bind:value={cfg.waterPower} /></label>
+  {/if}
+</div>
+{#if water}
+  <p class="small muted">
+    Vuorokaudessa {fmtKwh(water.kind === 'continuous' ? water.annual_kwh / 365 : water.power_kw * water.duration_min / 60)} kWh{#if water.kind !== 'continuous'},
+    lämmitys kestää n. {Math.floor(water.duration_min / 60)} h {water.duration_min % 60} min{/if}.
+    Oletus 2,5 kWh/hlö/vrk perustuu Motivan esimerkkitaloon (lämmin vesi 3 670 kWh/v, 4 henkeä).
+  </p>
+{/if}
+
 <style>
   .controls { margin: .6rem 0; align-items: flex-end; }
   .chart { width: 100%; height: 240px; }
+  h3.water { margin-top: 1rem; }
 </style>

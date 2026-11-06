@@ -106,8 +106,9 @@ export function fmtPrice(v, digits = 2) {
 
 export function fmtEur(v) {
   if (v === null || v === undefined || Number.isNaN(v)) return '–';
-  const digits = Math.abs(v) < 1 ? 3 : 2;
-  return v.toLocaleString('fi-FI', { minimumFractionDigits: digits, maximumFractionDigits: digits }) + ' €';
+  // Kustannukset sentin tarkkuudella. -0,00 näytetään 0,00:na.
+  const r = Math.round(v * 100) / 100;
+  return (r === 0 ? 0 : r).toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
 
 export function fmtKwh(v) {

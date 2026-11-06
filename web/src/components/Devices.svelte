@@ -151,7 +151,7 @@
             {@const save = r.eur - r.best.eur}
             <p class="small best">
               Halvin aloitus {isToday ? 'loppupäivänä' : 'tänä päivänä'}: <b>klo {hhmm(r.best.t)}</b> → {fmtEur(r.best.eur)}
-              {#if save > 0.0005}
+              {#if save >= 0.005}
                 (säästö {fmtEur(save)})
                 <button type="button" onclick={() => set(dev, 'start', hhmm(r.best.t))}>Siirrä</button>
               {:else}<span class="pill">valittu aika on halvin</span>{/if}

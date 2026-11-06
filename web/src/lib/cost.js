@@ -69,8 +69,9 @@ export function schedule(daySlots, devices, priceAt, extra = []) {
   const rows = daySlots.map((s) => ({ t: s.t, price: priceAt(s.t), cells: {} }));
   const index = new Map(rows.map((r, i) => [r.t, i]));
   const totals = {};
+  const newTotal = () => ({ kwh: 0, eur: 0, outside: 0, unknown: false });
   for (const { key, dev, startMs } of devices) {
-    totals[key] = { kwh: 0, eur: 0, outside: 0, unknown: false };
+    totals[key] ??= newTotal();
     if (dev.kind === 'continuous') {
       const perSlot = deviceEnergy(dev) / daySlots.length;
       for (const r of rows) add(r, key, perSlot);
@@ -91,7 +92,7 @@ export function schedule(daySlots, devices, priceAt, extra = []) {
     });
   }
   for (const { key, kwhAt } of extra) {
-    totals[key] = { kwh: 0, eur: 0, outside: 0, unknown: false };
+    totals[key] ??= newTotal();
     for (const r of rows) {
       const kwh = kwhAt(r.t);
       if (kwh === null || kwh === undefined) {
@@ -102,7 +103,12 @@ export function schedule(daySlots, devices, priceAt, extra = []) {
   }
   function add(r, key, kwh) {
     const eur = r.price === null || r.price === undefined ? null : (kwh * r.price) / 100;
-    r.cells[key] = { kwh, eur };
+    const c = r.cells[key];
+    if (!c) r.cells[key] = { kwh, eur };
+    else if (c.kwh !== null) {
+      c.kwh += kwh;
+      c.eur = c.eur === null || eur === null ? null : c.eur + eur;
+    }
     totals[key].kwh += kwh;
     if (eur === null) totals[key].unknown = true;
     else totals[key].eur += eur;

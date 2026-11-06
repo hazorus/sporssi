@@ -61,3 +61,14 @@ test('hinnan muunnos ja luokittelu', () => {
   close(h[0].spot, 2);
   assert.equal(addDays('2026-03-29', 1), '2026-03-30');
 });
+
+test('saman avaimen laitteet summataan', () => {
+  const slots = Array.from({ length: 4 }, (_, i) => ({ t: i * Q }));
+  const { rows, totals } = schedule(slots, [
+    { key: 'k', dev: { kind: 'power', power_kw: 4, duration_min: 15 }, startMs: 0 },
+    { key: 'k', dev: { kind: 'power', power_kw: 8, duration_min: 15 }, startMs: 0 },
+  ], () => 10);
+  close(rows[0].cells.k.kwh, 3);
+  close(totals.k.kwh, 3);
+  close(totals.k.eur, 0.3);
+});
