@@ -52,6 +52,10 @@ input, select {
 input[type='number'] { width: 6.5rem; }
 input[type='checkbox'] { accent-color: var(--accent); }
 .wrap { margin: 0 auto; padding: 1rem clamp(1rem, 2vw, 2.5rem); }
+@media (max-width: 640px) {
+  .wrap { padding: .6rem; }
+  .card { padding: .8rem .6rem; }
+}
 .card {
   background: var(--card); border: 1px solid var(--border); border-radius: 10px;
   padding: 1rem; margin-bottom: 1rem;

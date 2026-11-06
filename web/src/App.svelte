@@ -206,9 +206,11 @@
 
   // Loppusummataulukko: kodinkoneet yhtenä sarakkeena + lämmin vesi + rakennuksen lämmitys.
   const tableColumns = $derived([
-    { key: 'appliances', name: 'Kodinkoneet', title: 'Valittujen laitteiden yhteenlaskettu kulutus' },
-    { key: 'water', name: waterDistrict ? 'Lämmin vesi (kaukolämpö)' : 'Lämmin vesi' },
-    { key: 'heating', name: district ? 'Rakennuksen lämmitys (kaukolämpö)' : 'Rakennuksen lämmitys' },
+    { key: 'appliances', name: 'Kodinkoneet', short: 'Koneet', title: 'Valittujen kodinkoneiden yhteenlaskettu kulutus' },
+    { key: 'water', name: 'Lämmin vesi', short: waterDistrict ? 'Vesi (KL)' : 'Vesi',
+      title: waterDistrict ? 'Lämmin vesi (kaukolämpö)' : 'Lämmin vesi' },
+    { key: 'heating', name: 'Rakennuksen lämmitys', short: district ? 'Lämmitys (KL)' : 'Lämmitys',
+      title: district ? 'Rakennuksen lämmitys (kaukolämpö)' : 'Rakennuksen lämmitys' },
   ]);
   const tableDevices = $derived([
     ...scheduled.map((s) => ({ ...s, key: 'appliances' })),
@@ -360,8 +362,9 @@
 
   <section class="card">
     <h2>Kulutus ja kustannukset {settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}</h2>
+    <p class="small muted">Kulutus kWh ja kustannus €; sähkön hinta {unit}.</p>
     {#if district || waterDistrict}
-      <p class="small muted">Kaukolämmön sarakkeissa kWh on lämpöenergiaa ja hinta lasketaan kaukolämmön
+      <p class="small muted">KL = kaukolämpö. Kaukolämmön sarakkeissa kWh on lämpöenergiaa ja hinta lasketaan kaukolämmön
         energiamaksulla {fmtPrice(Number(heatCfg.dhPrice))} c/kWh (perusmaksu ei sisälly). Ne eivät kuluta sähköä.</p>
     {/if}
     <CostTable {daySlots} columns={tableColumns} devices={tableDevices} extra={heatExtra} {priceAt} resolution={settings.resolution} {nowMs} {unit} />

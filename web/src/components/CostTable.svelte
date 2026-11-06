@@ -17,55 +17,65 @@
     }
     return { kwh, eur, unknown };
   });
-  let hideEmpty = $state(false);
-  const shown = $derived(hideEmpty ? rows.filter((r) => r.total.kwh > 1e-9) : rows);
+  // Solut ilman yksikköä (yksikkö on otsikossa) -> kapeampi taulukko.
+  const num = (v) => fmtEur(v).replace(/\s*€$/, '');
+
+  // Kapealla näytöllä osien kWh-sarakkeet piilotetaan (yhteensä-kWh näkyy).
+  const mq = typeof window !== 'undefined' ? window.matchMedia('(max-width: 640px)') : null;
+  let narrow = $state(mq?.matches ?? false);
+  $effect(() => {
+    if (!mq) return;
+    const on = (e) => { narrow = e.matches; };
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  });
+  const span = $derived(narrow ? 1 : 2);
 </script>
 
-<label class="small"><input type="checkbox" bind:checked={hideEmpty} /> Piilota rivit, joilla ei kulutusta</label>
 <div class="scroll">
   <table>
     <thead>
       <tr>
         <th rowspan="2">Klo</th>
-        <th rowspan="2" class="num">Hinta<br />{unit}</th>
-        {#each columns as c (c.key)}<th colspan="2" class="dev" title={c.title ?? ''}>{c.name}</th>{/each}
-        <th colspan="2" class="dev">Yhteensä</th>
+        <th rowspan="2" class="num" title="Sähkön hinta">{unit}</th>
+        {#each columns as c (c.key)}<th colspan={span} class="dev" title={c.title ?? c.name}>{c.short ?? c.name}</th>{/each}
+        <th colspan="2" class="dev" title="Yhteensä">Yht.</th>
       </tr>
       <tr>
-        {#each columns as c (c.key)}<th class="num">kWh</th><th class="num">€</th>{/each}
+        {#each columns as c (c.key)}{#if !narrow}<th class="num">kWh</th>{/if}<th class="num">€</th>{/each}
         <th class="num">kWh</th><th class="num">€</th>
       </tr>
     </thead>
     <tbody>
-      {#each shown as r (r.t)}
+      {#each rows as r (r.t)}
         <tr class:now={nowMs >= r.t && nowMs < r.t + step * 60000}>
           <td>{hhmm(r.t)}</td>
           <td class="num">{fmtPrice(r.price)}</td>
           {#each columns as c (c.key)}
             {@const cell = r.cells[c.key]}
             {#if cell && cell.kwh}
-              <td class="num">{fmtKwh(cell.kwh)}</td><td class="num">{fmtEur(cell.eur)}</td>
+              {#if !narrow}<td class="num">{fmtKwh(cell.kwh)}</td>{/if}<td class="num">{num(cell.eur)}</td>
             {:else if cell && cell.kwh === null}
-              <td class="num muted">?</td><td class="num muted">?</td>
+              {#if !narrow}<td class="num muted">?</td>{/if}<td class="num muted">?</td>
             {:else}
-              <td class="num muted"></td><td class="num muted"></td>
+              {#if !narrow}<td class="num muted"></td>{/if}<td class="num muted"></td>
             {/if}
           {/each}
           <td class="num"><b>{r.total.kwh ? fmtKwh(r.total.kwh) : ''}</b></td>
-          <td class="num"><b>{r.total.kwh ? fmtEur(r.total.eur) : ''}</b></td>
+          <td class="num"><b>{r.total.kwh ? num(r.total.eur) : ''}</b></td>
         </tr>
       {/each}
     </tbody>
     <tfoot>
       <tr>
-        <th colspan="2">Yhteensä</th>
+        <th colspan="2">Yht.</th>
         {#each columns as c (c.key)}
           {@const t = result.totals[c.key] ?? empty}
-          <th class="num">{fmtKwh(t.kwh)}</th>
-          <th class="num">{fmtEur(t.eur)}{t.unknown ? '*' : ''}</th>
+          {#if !narrow}<th class="num">{fmtKwh(t.kwh)}</th>{/if}
+          <th class="num">{num(t.eur)}{t.unknown ? '*' : ''}</th>
         {/each}
         <th class="num">{fmtKwh(grand.kwh)}</th>
-        <th class="num">{fmtEur(grand.eur)}{grand.unknown ? '*' : ''}</th>
+        <th class="num">{num(grand.eur)}{grand.unknown ? '*' : ''}</th>
       </tr>
     </tfoot>
   </table>
@@ -79,5 +89,9 @@
 
 <style>
   th.dev { text-align: center; border-left: 1px solid var(--border); white-space: nowrap; }
+  @media (max-width: 640px) {
+    table { font-size: .78rem; }
+    th, td { padding: .25rem .2rem; }
+  }
   tfoot th { color: var(--text); border-top: 2px solid var(--border); }
 </style>
