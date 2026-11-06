@@ -8,6 +8,7 @@
   const MIN_SHARE = 0.01; // alle 1 %:n kodinkoneet yhdistetään
 
   const total = $derived(parts.reduce((a, p) => a + (p.kwh || 0), 0));
+  const totalEur = $derived(parts.reduce((a, p) => a + (p.eur || 0), 0));
   const rows = $derived.by(() => {
     if (!(total > 0)) return [];
     const big = [];
@@ -64,17 +65,23 @@
             label: inside ? { position: 'insideRight', color: '#fff', fontWeight: 'bold' } : { position: 'right', color: cssVar('--text') },
           };
         }),
-        label: { show: true, formatter: (p) => `${fmtPrice(list[p.dataIndex].share * 100, list[p.dataIndex].share < 0.1 ? 1 : 0)} %` },
+        label: {
+          show: true,
+          formatter: (p) => {
+            const r = list[p.dataIndex];
+            return `${fmtPrice(r.share * 100, r.share < 0.1 ? 1 : 0)} % · ${fmtEur(r.eur)}`;
+          },
+        },
       }],
     };
   });
 
   const ariaLabel = $derived(`Vuorokauden kulutusjakauma, yhteensä ${fmtKwh(total)} kWh: `
-    + rows.map((r) => `${r.name} ${fmtPrice(r.share * 100, 1)} %`).join(', ') + '.');
+    + rows.map((r) => `${r.name} ${fmtPrice(r.share * 100, 1)} %, ${fmtEur(r.eur)}`).join('; ') + '.');
 </script>
 
 {#if rows.length}
-  <p class="small muted">Yhteensä {fmtKwh(total)} kWh vuorokaudessa. Alle 1&nbsp;%:n kodinkoneet on yhdistetty.{note ? ` ${note}` : ''}</p>
+  <p class="small muted">Yhteensä {fmtKwh(total)} kWh vuorokaudessa. Kustannus yhteensä {fmtEur(totalEur)}. Alle 1&nbsp;%:n kodinkoneet on yhdistetty.{note ? ` ${note}` : ''}</p>
   <div class="chart" role="img" aria-label={ariaLabel}
     style="height: {Math.max(140, remPx() * (screen.narrow ? 1.6 + rows.length * 3 : 1.5 + rows.length * 2.2))}px"
     use:echart={option}></div>
