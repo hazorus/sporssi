@@ -2,6 +2,7 @@
   import { deviceEnergy, runCost, bestStart, startMsFor } from '../lib/cost.js';
   import { hhmm, fmtEur, fmtKwh, SLOT_MS } from '../lib/pricing.js';
   import { screen } from '../lib/chart.svelte.js';
+  import { persistOpen } from '../lib/persist.js';
 
   // Luettelon arvot ilman turhia desimaaleja: 0,5 kWh/kerta, 150 kWh/v.
   const short = (v) => (v === null || v === undefined ? '–'
@@ -88,31 +89,38 @@
     {#each selected as dev (dev.id)}
       {@const r = info(dev)}
       <div class="dev">
-        <div class="dev-head">
-          <b class="name">{dev.name}</b>
-          <span class="num cost">{fmtKwh(r.kwh)} kWh{r.continuous ? '/vrk' : ''} · <b>{fmtEur(r.eur)}</b></span>
+        <div class="dev-top">
+          <details class="dev-details" use:persistOpen={'laite.' + dev.id}>
+            <summary class="dev-head" title="Näytä tai piilota asetukset">
+              <b class="name">{dev.name}</b>
+              <span class="meta muted">{r.continuous ? 'jatkuva kulutus' : `klo ${dev.start ?? '–'} · ${dev.duration_min} min`}</span>
+              <span class="num cost">{fmtKwh(r.kwh)} kWh{r.continuous ? '/vrk' : ''} · <b>{fmtEur(r.eur)}</b></span>
+            </summary>
+            {#if r.continuous}
+              <div class="row small fields">
+                <label class="field">Vuosikulutus, kWh <input type="number" min="0" step="10" value={dev.annual_kwh}
+                  onchange={(e) => set(dev, 'annual_kwh', Number(e.currentTarget.value))} /></label>
+                <span class="muted">jaettu tasaisesti vuorokaudelle</span>
+              </div>
+            {:else}
+              <div class="row small fields">
+                <label class="field">Aloitus <input type="time" step="900" value={dev.start}
+                  onchange={(e) => set(dev, 'start', e.currentTarget.value)} /></label>
+                <label class="field">Kesto, min <input type="number" min="1" step="1" value={dev.duration_min}
+                  onchange={(e) => set(dev, 'duration_min', Number(e.currentTarget.value))} /></label>
+                {#if dev.kind === 'power'}
+                  <label class="field">Teho, kW <input type="number" min="0" step="0.01" value={dev.power_kw}
+                    onchange={(e) => set(dev, 'power_kw', Number(e.currentTarget.value))} /></label>
+                {:else}
+                  <label class="field">kWh/kerta <input type="number" min="0" step="0.01" value={dev.energy_kwh}
+                    onchange={(e) => set(dev, 'energy_kwh', Number(e.currentTarget.value))} /></label>
+                {/if}
+              </div>
+            {/if}
+          </details>
           <button type="button" class="x" title="Poista valinta" aria-label="Poista {dev.name}" onclick={() => toggle(dev, false)}>✕</button>
         </div>
-        {#if r.continuous}
-          <div class="row small fields">
-            <label class="field">Vuosikulutus, kWh <input type="number" min="0" step="10" value={dev.annual_kwh}
-              onchange={(e) => set(dev, 'annual_kwh', Number(e.currentTarget.value))} /></label>
-            <span class="muted">jaettu tasaisesti vuorokaudelle</span>
-          </div>
-        {:else}
-          <div class="row small fields">
-            <label class="field">Aloitus <input type="time" step="900" value={dev.start}
-              onchange={(e) => set(dev, 'start', e.currentTarget.value)} /></label>
-            <label class="field">Kesto, min <input type="number" min="1" step="1" value={dev.duration_min}
-              onchange={(e) => set(dev, 'duration_min', Number(e.currentTarget.value))} /></label>
-            {#if dev.kind === 'power'}
-              <label class="field">Teho, kW <input type="number" min="0" step="0.01" value={dev.power_kw}
-                onchange={(e) => set(dev, 'power_kw', Number(e.currentTarget.value))} /></label>
-            {:else}
-              <label class="field">kWh/kerta <input type="number" min="0" step="0.01" value={dev.energy_kwh}
-                onchange={(e) => set(dev, 'energy_kwh', Number(e.currentTarget.value))} /></label>
-            {/if}
-          </div>
+        {#if !r.continuous}
           {#if r.best && r.eur !== null}
             {@const save = r.eur - r.best.eur}
             <p class="small best">
@@ -135,7 +143,7 @@
       </div>
     {/each}
     {#if selected.length}
-      <details class="small muted sources">
+      <details class="small muted sources" use:persistOpen={'lahteet'}>
         <summary>Valittujen laitteiden tiedot ja lähteet</summary>
         <dl>
           {#each selected as dev (dev.id)}
@@ -160,7 +168,7 @@
     <h3>{screen.narrow ? 'Lisää tai poista laitteita' : 'Valitse laitteet'}</h3>
     {#each categories as cat (cat)}
       {@const n = countIn(cat)}
-      <details class="cat" open={!screen.narrow}>
+      <details class="cat" open={!screen.narrow} use:persistOpen={'luokka.' + cat}>
         <summary><span>{cat}</span>{#if n}<span class="pill">{n} valittu</span>{/if}</summary>
         {#each all.filter((d) => d.category === cat) as dev (dev.id)}
           <label class="pick" title={dev.notes ?? ''}>
@@ -173,7 +181,7 @@
       </details>
     {/each}
 
-    <details class="add">
+    <details class="add" use:persistOpen={'oma-laite'}>
       <summary><b>+ Lisää oma laite</b></summary>
       <form onsubmit={addCustom}>
         <label class="field">Nimi <input bind:value={form.name} placeholder="esim. Akkuporakoneen laturi" /></label>
@@ -222,8 +230,14 @@
   .spec { white-space: nowrap; }
   .x { padding: 0 .45rem; line-height: 1.5; }
   .dev { border-bottom: 1px solid var(--border); padding: .6rem 0; }
-  .dev-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+  .dev-top { display: flex; gap: .5rem; align-items: flex-start; }
+  .dev-details { flex: 1; min-width: 0; }
+  .dev-head { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; cursor: pointer; list-style: none; }
+  .dev-head::-webkit-details-marker { display: none; }
+  .dev-head::before { content: '▸'; width: .9rem; color: var(--muted); }
+  .dev-details[open] > .dev-head::before { content: '▾'; }
   .dev-head .name { flex: 1 1 12rem; }
+  .dev-head .meta { flex: 1 1 8rem; }
   .dev-head .cost { margin-left: auto; }
   .fields { margin-top: .35rem; gap: .4rem; }
   .fields .field input { width: 6.5rem; }

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import echarts from '../lib/echarts.js';
   import { screen, applyFont, remPx } from '../lib/chart.svelte.js';
+  import { persistOpen } from '../lib/persist.js';
   import { hhmm, fmtKwh, fmtPrice, fmtEur } from '../lib/pricing.js';
 
   let { options, cfg = $bindable(), data, error, loading, water, costHours = [], geoStatus = '', onlocate } = $props();
@@ -168,7 +169,7 @@
     </p>
     <div class="chart" bind:this={el} role="img" aria-label={chartLabel}></div>
   {/if}
-  <details class="small muted">
+  <details class="small muted" use:persistOpen={'lammitys-ohje'}>
     <summary>Miten lämmitys arvioidaan?</summary>
     <p>
       Rakennuksen lämpöhäviö lasketaan vuotuisesta lämmitystarpeesta ja paikkakunnan normaalivuoden

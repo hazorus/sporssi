@@ -1,5 +1,6 @@
 <script>
   import { echart, cssVar, screen, remPx } from '../lib/chart.svelte.js';
+  import { persistOpen } from '../lib/persist.js';
   import { runCost, bestStart, deviceEnergy } from '../lib/cost.js';
   import { SLOT_MS, hhmm, weekdayShort, fmtEur, fmtKwh, fmtPrice, esc } from '../lib/pricing.js';
 
@@ -270,7 +271,7 @@
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 
   <!-- Oletuksena suljettu; kaavio piirretään vasta avattaessa. -->
-  <details class="future" bind:open={futureOpen}>
+  <details class="future" bind:open={futureOpen} use:persistOpen={'aloitusajat'}>
     <summary><h3>Käyttökustannus eri aloitusaikoina</h3></summary>
     {#if futureOpen}
       <div class="row seg-row">

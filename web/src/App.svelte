@@ -4,6 +4,7 @@
   import { net } from './lib/net.svelte.js';
   import { load, loadList, loadOr, save } from './lib/storage.js';
   import { colorScheme, screen } from './lib/chart.svelte.js';
+  import { persistOpen } from './lib/persist.js';
   import {
     DEFAULT_SETTINGS, userPrice, bands as makeBands, normalizeSlots, toHours, hhmm, dayLabel,
     localDate, addDays, fmtPrice, CLASS_LABELS, classify, helsinkiToUtc,
@@ -414,7 +415,7 @@
         {/each}
         <span class="muted">Vihreä alue = 12 kk keskihinta ± keskihajonta{settings.autoScale ? '' : ' · kiinteä asteikko'}</span>
       </div>
-      <details class="table-toggle">
+      <details class="table-toggle" use:persistOpen={'hintataulukko'}>
         <summary>Hintataulukko</summary>
         <PriceTable {hours} {settings} {bands} {nowMs} {unit} />
       </details>
@@ -431,21 +432,23 @@
     <Devices catalog={appliances} bind:custom bind:selection {daySlots} {priceAt} {nowMs} isToday={date === today} />
   </section>
 
+  <section class="card" aria-labelledby="jakauma-otsikko">
+    <h2 id="jakauma-otsikko">Vuorokauden kulutusjakauma</h2>
+    <ShareChart parts={shareParts.parts} {scheme}
+      note={(shareParts.heatingUnknown ? 'Osalta tunneista puuttuu säätieto, joten lämmityksen osuus voi olla todellista pienempi. ' : '')
+        + (district || waterDistrict ? 'Kaukolämmön osuus on lämpöenergiaa, ei sähköä.' : '')} />
+  </section>
+
   <section class="card">
-    <h2>Kulutus ja kustannukset {settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}</h2>
+    <details class="cost-toggle" use:persistOpen={'kustannustaulukko'}>
+      <summary><h2>Kulutus ja kustannukset {settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}</h2></summary>
     <p class="small muted">Kulutus kWh ja kustannus €; sähkön hinta {unit}{#if screen.narrow} (sarake c){/if}.</p>
     {#if district || waterDistrict}
       <p class="small muted">KL = kaukolämpö. Kaukolämmön sarakkeissa kWh on lämpöenergiaa ja hinta lasketaan kaukolämmön
         energiamaksulla {fmtPrice(Number(heatCfg.dhPrice))} c/kWh (perusmaksu ei sisälly). Ne eivät kuluta sähköä.</p>
     {/if}
     <CostTable {daySlots} columns={tableColumns} devices={tableDevices} extra={heatExtra} {priceAt} resolution={settings.resolution} {nowMs} {unit} />
-  </section>
-
-  <section class="card" aria-labelledby="jakauma-otsikko">
-    <h2 id="jakauma-otsikko">Vuorokauden kulutusjakauma</h2>
-    <ShareChart parts={shareParts.parts} {scheme}
-      note={(shareParts.heatingUnknown ? 'Osalta tunneista puuttuu säätieto, joten lämmityksen osuus voi olla todellista pienempi. ' : '')
-        + (district || waterDistrict ? 'Kaukolämmön osuus on lämpöenergiaa, ei sähköä.' : '')} />
+    </details>
   </section>
 
   </main>
@@ -469,6 +472,9 @@
   .big { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
   .legend { gap: 1rem; margin: .2rem 0 .6rem; }
   .table-toggle summary { font-weight: 600; margin: .4rem 0; }
+  .cost-toggle > summary { cursor: pointer; }
+  .cost-toggle > summary h2 { display: inline; margin: 0; }
+  .cost-toggle[open] > summary { margin-bottom: .5rem; }
   footer { padding: 0 .2rem 2rem; }
   .warn { border-left: 3px solid var(--yellow); padding: .3rem .6rem; background: var(--row-alt); }
 </style>
