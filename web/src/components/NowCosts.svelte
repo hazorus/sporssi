@@ -78,14 +78,17 @@
     const np = nowPrice && nowPrice.v !== null ? nowPrice : null;
     const npColor = np ? (np.cls === 'none' ? muted : cssVar(`--${np.cls}`)) : muted;
     const labelLeft = np && (np.t - t0) / Math.max(1, t1 - t0) > 0.6;
+    const rightPad = hasLine ? fs * 2.6 : (narrow ? 2 : fs * 1.6);
     return {
       animation: false,
       // Puhelimessa laitteen nimi on palkin yläpuolella, jolloin palkit saavat koko leveyden.
+      // Molemmat koordinaatistot jättävät oikealle tilaa hinta-asteikolle (c/kWh) ja ylös
+      // kellonajoille. Pystyakselilla ovat laitteet, joten hinta-asteikko ei kilpaile niiden kanssa.
       grid: [
         narrow
-          ? { left: 2, right: 2, top: fs * 1.3, bottom: 2 }
-          : { left: 8, right: fs * 1.6, top: 8, bottom: 8, containLabel: true },
-        { left: 0, right: 0, top: fs * 1.6, bottom: narrow ? 2 : fs * 1.8 },
+          ? { left: 2, right: rightPad, top: fs * 2.8, bottom: 2 }
+          : { left: 8, right: rightPad, top: fs * 2.6, bottom: 8, containLabel: true },
+        { left: 0, right: rightPad, top: fs * 2.6, bottom: narrow ? 2 : fs * 1.8 },
       ],
       tooltip: {
         trigger: 'item',
@@ -103,7 +106,12 @@
         type: 'value', min: 0,
         axisLabel: { show: !narrow, color: muted, formatter: (v) => `${fmtPrice(v, v < 1 ? 2 : 1)} €` },
         splitLine: { lineStyle: { color: border } },
-      }, { type: 'time', gridIndex: 1, min: t0, max: t1, show: false }],
+      }, {
+        type: 'value', gridIndex: 1, min: t0, max: t1, interval: 6 * 3600000, position: 'top',
+        axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
+        // Päivän lopun 00 jätetään pois: tilalla on hinta-asteikon yksikkö.
+        axisLabel: { show: hasLine, color: muted, formatter: (v) => (v >= t1 - 60000 ? '' : hhmm(v).slice(0, 2)) },
+      }],
       yAxis: [{
         type: 'category', data: list.map((r) => r.dev.name),
         axisLabel: narrow
@@ -112,7 +120,12 @@
         axisTick: { show: false },
         axisLine: { lineStyle: { color: border } },
         z: 3,
-      }, { type: 'value', gridIndex: 1, min: yMin, max: yMax, show: false }],
+      }, {
+        type: 'value', gridIndex: 1, min: yMin, max: yMax, position: 'right', show: hasLine,
+        name: unit, nameLocation: 'end', nameGap: Math.round(fs * 0.5), nameTextStyle: { color: muted, align: 'right', verticalAlign: 'bottom' },
+        axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
+        axisLabel: { color: muted, formatter: (v) => fmtPrice(v, 0) },
+      }],
       series: [...(hasLine ? [{
         type: 'line', xAxisIndex: 1, yAxisIndex: 1, z: 1, silent: true, step: 'end', showSymbol: false,
         data: [...line.map((p) => [p.t, p.v]), [t1, line[line.length - 1].v]],
@@ -252,7 +265,7 @@
   {/if}
   <div class="chart" role="img" aria-label={nowLabel} style="height: {Math.max(140, remPx() * (screen.narrow ? 1.6 + usable.length * 3 : 2.5 + usable.length * 2.2))}px" use:echart={nowOption}></div>
   <p class="small muted">Kustannus lasketaan käytön ajan varttihinnoilla ({unit}) alkaen kuluvasta vartista.
-    Taustalla tämän päivän pörssisähkön hinta klo 00–24; piste näyttää hinnan nyt.
+    Taustalla tämän päivän pörssisähkön hinta: kellonajat yläreunassa, hinta ({unit}) oikeassa reunassa; piste näyttää hinnan nyt.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 
   <div class="row">
