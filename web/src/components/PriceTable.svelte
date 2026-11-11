@@ -1,5 +1,5 @@
 <script>
-  import { classify, userPrice, hhmm, fmtPrice, CLASS_LABELS } from '../lib/pricing.js';
+  import { classify, userPrice, hhmm, fmtPrice, CLASS_LABELS, weekdayShort } from '../lib/pricing.js';
 
   let { hours, settings, bands, nowMs, unit } = $props();
   const quarterMode = $derived(settings.resolution === 'quarter');
@@ -25,7 +25,7 @@
       {#each hours as h (h.t)}
         {@const avg = cell(h.spot)}
         <tr class:now={!quarterMode && isNow(h.t, 60)}>
-          <td>{hhmm(h.t)}–{hhmm(h.t + 3600000)}</td>
+          <td>{#if h.t !== hours[0]?.t && hhmm(h.t) === '00:00'}<b>{weekdayShort(h.t)}</b> {/if}{hhmm(h.t)}–{hhmm(h.t + 3600000)}</td>
           {#if quarterMode}
             {#each h.quarters as q (q.t)}
               {@const c = cell(q.spot)}

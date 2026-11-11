@@ -7,7 +7,7 @@
   import { persistOpen } from './lib/persist.js';
   import {
     DEFAULT_SETTINGS, userPrice, bands as makeBands, normalizeSlots, toHours, hhmm, dayLabel,
-    localDate, addDays, fmtPrice, CLASS_LABELS, classify, helsinkiToUtc,
+    localDate, addDays, fmtPrice, CLASS_LABELS, classify, helsinkiToUtc, weekdayShort,
   } from './lib/pricing.js';
   import { startMsFor, schedule, scheduleToHours } from './lib/cost.js';
   import PriceChart from './components/PriceChart.svelte';
@@ -164,6 +164,27 @@
   const cur = $derived(days[date]);
   const daySlots = $derived(cur?.slots ?? []);
   const hours = $derived(toHours(daySlots));
+
+  // Hintakaavio tänään: edellisestä tunnista eteenpäin niin pitkälle kuin hintoja on (myös huominen),
+  // kuluneet tunnit vain pyydettäessä. Muina päivinä koko vuorokausi.
+  const rolling = $derived(date === today);
+  const hourStartNow = $derived(nowMs - (nowMs % 3600000));
+  const chartSlots = $derived.by(() => {
+    if (!rolling) return daySlots;
+    const all = [...(days[today]?.slots ?? []), ...(days[addDays(today, 1)]?.slots ?? [])];
+    const from = settings.showPast ? (all[0]?.t ?? 0) : hourStartNow - 3600000;
+    const out = [];
+    for (const s of all) {
+      if (s.t < from) continue;
+      if (s.spot === null && s.t > nowMs) break; // tuntemattomat (huominen ennen julkaisua)
+      out.push(s);
+    }
+    // vain kokonaiset tunnit, jotta tuntinäkymä pysyy tasassa
+    return out.slice(0, out.length - (out.length % 4));
+  });
+  const chartHours = $derived(toHours(chartSlots));
+  const includesTomorrow = $derived(rolling && chartSlots.some((s) => localDate(s.t) !== today));
+  const whenLabel = (t) => (localDate(t) === today ? `klo ${hhmm(t)}` : `${weekdayShort(t)} klo ${hhmm(t)}`);
   const priceMap = $derived.by(() => {
     const m = new Map();
     for (const d of [addDays(date, -1), date, addDays(date, 1)]) {
@@ -193,7 +214,7 @@
   })));
 
   const summary = $derived.by(() => {
-    const vals = daySlots.filter((s) => s.spot !== null).map((s) => ({ t: s.t, v: userPrice(s.spot, settings), spot: s.spot }));
+    const vals = chartSlots.filter((s) => s.spot !== null).map((s) => ({ t: s.t, v: userPrice(s.spot, settings), spot: s.spot }));
     if (!vals.length) return null;
     const avg = vals.reduce((a, b) => a + b.v, 0) / vals.length;
     const min = vals.reduce((a, b) => (b.v < a.v ? b : a));
@@ -225,7 +246,14 @@
   const overlays = $derived(overlaySlots
     .map((id, slot) => {
       const s = id && overlayCandidates.find((c) => c.key === id);
-      return s ? { ...s, slot } : null;
+      if (!s) return null;
+      let startMs = s.startMs;
+      if (rolling) {
+        // valittu aloitus tänään; jos se on jo mennyt, seuraava esiintymä huomenna
+        const tomorrowSlots = days[addDays(today, 1)]?.slots ?? [];
+        if (startMs < nowMs - (nowMs % 900000) && tomorrowSlots.length) startMs = startMsFor(tomorrowSlots, s.dev.start, hhmm);
+      }
+      return { ...s, startMs, slot };
     })
     .filter(Boolean));
   function toggleOverlay(id) {
@@ -342,9 +370,9 @@
 
   // Kaavion tekstivastine ruudunlukijalle.
   const priceChartLabel = $derived(summary
-    ? `Pörssisähkön hinta, ${dayLabel(date).toLowerCase()}, ${settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}: `
-      + `keskihinta ${fmtPrice(summary.avg)} ${unit}, halvin ${fmtPrice(summary.min.v)} klo ${hhmm(summary.min.t)}, `
-      + `kallein ${fmtPrice(summary.max.v)} klo ${hhmm(summary.max.t)}. Tarkat hinnat ovat hintataulukossa.`
+    ? `Pörssisähkön hinta, ${rolling ? `tänään ${includesTomorrow ? 'ja huomenna ' : ''}${settings.showPast ? '' : 'edellisestä tunnista alkaen'}` : dayLabel(date).toLowerCase()}, ${settings.resolution === 'quarter' ? 'varteittain' : 'tunneittain'}: `
+      + `keskihinta ${fmtPrice(summary.avg)} ${unit}, halvin ${fmtPrice(summary.min.v)} ${whenLabel(summary.min.t)}, `
+      + `kallein ${fmtPrice(summary.max.v)} ${whenLabel(summary.max.t)}. Tarkat hinnat ovat hintataulukossa.`
     : 'Pörssisähkön hintakaavio');
 
   const canNext = $derived(date < addDays(today, 1));
@@ -401,7 +429,10 @@
         <button type="button" aria-pressed={settings.resolution === 'quarter'} class:on={settings.resolution === 'quarter'} onclick={() => (settings.resolution = 'quarter')}>15 min</button>
       </div>
     </div>
-    <h2 class="day">{dayLabel(date)}{date === today ? ' (tänään)' : date === addDays(today, 1) ? ' (huomenna)' : ''}</h2>
+    <h2 class="day">{dayLabel(date)}{date === today ? (includesTomorrow ? ' (tänään) ja huomenna' : ' (tänään)') : date === addDays(today, 1) ? ' (huomenna)' : ''}</h2>
+    {#if rolling}
+      <label class="past"><input type="checkbox" bind:checked={settings.showPast} /> Näytä myös tämän päivän kuluneet tunnit</label>
+    {/if}
 
     {#if summary}
       <div class="row stats">
@@ -410,9 +441,9 @@
             <b class="big"><span class="swatch c-{classify(summary.now.spot, bands)}" aria-hidden="true"></span> {fmtPrice(summary.now.v)}<span class="sr-only"> ({CLASS_LABELS[classify(summary.now.spot, bands)]})</span></b>
             <span class="small muted">{unit}</span></div>
         {/if}
-        <div class="stat"><span class="muted small">Päivän keskihinta</span><b class="big">{fmtPrice(summary.avg)}</b><span class="small muted">{unit}</span></div>
-        <div class="stat"><span class="muted small">Halvin</span><b class="big">{fmtPrice(summary.min.v)}</b><span class="small muted">klo {hhmm(summary.min.t)}</span></div>
-        <div class="stat"><span class="muted small">Kallein</span><b class="big">{fmtPrice(summary.max.v)}</b><span class="small muted">klo {hhmm(summary.max.t)}</span></div>
+        <div class="stat"><span class="muted small">{rolling ? 'Keskihinta' : 'Päivän keskihinta'}</span><b class="big">{fmtPrice(summary.avg)}</b><span class="small muted">{unit}</span></div>
+        <div class="stat"><span class="muted small">Halvin</span><b class="big">{fmtPrice(summary.min.v)}</b><span class="small muted">{whenLabel(summary.min.t)}</span></div>
+        <div class="stat"><span class="muted small">Kallein</span><b class="big">{fmtPrice(summary.max.v)}</b><span class="small muted">{whenLabel(summary.max.t)}</span></div>
         {#if stats}
           <div class="stat"><span class="muted small">{stats.coverage < 0.9 ? `Keskihinta (${Math.round(stats.slots / 96)} vrk)` : '12 kk keskihinta'}</span><b class="big">{fmtPrice(userPrice(stats.mean, settings))}</b><span class="small muted">hajonta ± {fmtPrice(stats.std)} (ALV 0)</span></div>
         {/if}
@@ -442,7 +473,7 @@
           {/each}
         </div>
       {/if}
-      <PriceChart {scheme} label={priceChartLabel} rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit}
+      <PriceChart {scheme} label={priceChartLabel} rows={settings.resolution === 'quarter' ? chartSlots : chartHours} {settings} {bands} {nowMs} {unit}
         {overlays} costAt={priceAt} />
       {#if overlays.length}
         <p class="small muted">Laitteen kaistassa täytetty palkki on halvin käyttöjakso ja katkoviivakehys valittu
@@ -457,7 +488,7 @@
       </div>
       <details class="table-toggle" use:persistOpen={'hintataulukko'}>
         <summary>Hintataulukko</summary>
-        <PriceTable {hours} {settings} {bands} {nowMs} {unit} />
+        <PriceTable hours={chartHours} {settings} {bands} {nowMs} {unit} />
       </details>
     {/if}
   </section>
@@ -477,6 +508,10 @@
     <ShareChart parts={shareParts.parts} {scheme}
       note={(shareParts.heatingUnknown ? 'Osalta tunneista puuttuu säätieto, joten lämmityksen osuus voi olla todellista pienempi. ' : '')
         + (district || waterDistrict ? 'Kaukolämmön osuus on lämpöenergiaa, ei sähköä.' : '')} />
+  </section>
+
+  <section class="card">
+    <NowCosts part="future" devices={scheduled} priceAt={nowPriceAt} {nowMs} lastKnownMs={nowPrices.last} {scheme} {unit} />
   </section>
 
   <section class="card">
@@ -513,6 +548,7 @@
   .big { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
   .legend { gap: 1rem; margin: .2rem 0 .6rem; }
   .table-toggle summary { font-weight: 600; margin: .4rem 0; }
+  .past { display: block; margin: -.3rem 0 .6rem; }
   .overlay-pick { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .2rem 0 .5rem; }
   /* Valittu: laitteen värinen kehys ja täplä; teksti normaalivärinen (kontrasti) */
   .ov.on { border: 2px solid var(--c); font-weight: 600; }

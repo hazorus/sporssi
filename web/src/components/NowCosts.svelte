@@ -5,7 +5,8 @@
   import { SLOT_MS, hhmm, weekdayShort, fmtEur, fmtKwh, fmtPrice, esc } from '../lib/pricing.js';
 
   // devices: [{key, dev}] valitut laitteet, priceAt: tämän päivän + huomisen hinnat
-  let { devices, priceAt, nowMs, lastKnownMs, scheme, unit, priceLine = [] } = $props();
+  // part: 'now' = käyttö nyt -kaavio, 'future' = käyttökustannus eri aloitusaikoina (sivun lopussa)
+  let { devices, priceAt, nowMs, lastKnownMs, scheme, unit, priceLine = [], part = 'now' } = $props();
   const nowPrice = $derived(priceLine.find((p) => nowMs >= p.t && nowMs < p.t + SLOT_MS) ?? null);
 
   let relative = $state(false);
@@ -259,8 +260,13 @@
 </script>
 
 {#if usable.length === 0}
-  <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
-{:else}
+  {#if part === 'now'}
+    <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
+  {:else}
+    <h2>Käyttökustannus eri aloitusaikoina</h2>
+    <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen eri aloitusaikoina.</p>
+  {/if}
+{:else if part === 'now'}
   {#if screen.narrow && nowPrice && nowPrice.v !== null}
     <p class="nowprice"><span class="swatch c-{nowPrice.cls}" aria-hidden="true"></span>
       Sähkö nyt <b>{fmtPrice(nowPrice.v)} {unit}</b></p>
@@ -269,10 +275,10 @@
   <p class="small muted">Kustannus lasketaan käytön ajan varttihinnoilla ({unit}) alkaen kuluvasta vartista.
     Taustalla tämän päivän pörssisähkön hinta: kellonajat yläreunassa, hinta ({unit}) oikeassa reunassa; piste näyttää hinnan nyt.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
-
+{:else}
   <!-- Oletuksena suljettu; kaavio piirretään vasta avattaessa. -->
   <details class="future" bind:open={futureOpen} use:persistOpen={'aloitusajat'}>
-    <summary><h3>Käyttökustannus eri aloitusaikoina</h3></summary>
+    <summary><h2>Käyttökustannus eri aloitusaikoina</h2></summary>
     {#if futureOpen}
       <div class="row seg-row">
         <span class="spacer"></span>
@@ -297,8 +303,8 @@
   .chart { width: 100%; }
   .nowprice { margin: 0 0 .3rem; }
   h3 { margin-top: .4rem; }
-  details.future { margin-top: .6rem; }
+  details.future { margin: 0; }
   details.future > summary { cursor: pointer; }
-  details.future > summary h3 { display: inline; margin: 0; }
+  details.future > summary h2 { display: inline; margin: 0; }
   .seg-row { margin: .4rem 0; }
 </style>

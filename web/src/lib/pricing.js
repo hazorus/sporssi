@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   includeTax: false,
   tax: 2.827, // sähkövero + huoltovarmuusmaksu, luokka I, c/kWh sis. ALV
   resolution: 'hour', // 'hour' | 'quarter'
+  showPast: false, // hintakaaviossa myös tämän päivän kuluneet tunnit
   autoScale: false,
   yMin: -5,
   yMax: 40,

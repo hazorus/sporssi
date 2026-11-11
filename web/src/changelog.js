@@ -2,6 +2,22 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.3',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Muutokset',
+        items: [
+          'Tämän päivän hintakaavio alkaa edellisestä tunnista ja jatkuu niin pitkälle kuin hintoja on tiedossa: huomisen hinnat tulevat mukaan heti julkaisun jälkeen. Kuluneet tunnit saa näkyviin valinnalla.',
+          'Hintakaavioon valittujen laitteiden halvimmaksi ajaksi tarjotaan vain tulevia aloitusaikoja; valittu aloitusaika näytetään seuraavana esiintymänä.',
+          'Vuorokauden vaihde merkitään hintakaavioon ja hintataulukkoon viikonpäivällä; kellonaikojen väli sovitetaan näytön leveyteen.',
+          'Käyttökustannus eri aloitusaikoina -kaavio siirretty sivun loppuun ennen kustannustaulukkoa.',
+          'Korjattu laitteiden kaistojen leveys kapeilla näytöillä.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.2',
     date: '2026-11-11',
     sections: [
