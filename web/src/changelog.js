@@ -2,6 +2,21 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.7',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Uudet ominaisuudet',
+        items: [
+          'Oma kulutus -sivu: Datahubin (tai sähköyhtiön) kulutus-CSV:n tuonti. Tiedosto käsitellään vain selaimessa.',
+          'Kustannus pörssihinnalla ja kiinteällä hinnalla viikolta, kuukaudelta, vuodelta tai koko tiedostosta; kustannus päivittäin tai kuukausittain.',
+          'Kalleimmat tunnit ja päivät, kulutuksen ja hinnan vuorokausiprofiili, vinkit sekä arvio säästöstä, jos osa kulutuksesta olisi siirretty päivän halvimmille tunneille.',
+          'Mitattu peruskulutus yöllisistä tunneista; sen voi ottaa Spörssin peruskulutukseksi.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.6',
     date: '2026-11-11',
     sections: [

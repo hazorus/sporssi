@@ -223,3 +223,16 @@ def test_api_bad_days_and_health(tmp_path):
     assert c.get("/api/stats?days=abc").status_code == 400
     h = c.get("/api/health")
     assert "db" not in h.get_json() and h.headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_prices_range(tmp_path):
+    app = create_app(Config(db_path=str(tmp_path / "r.sqlite3"), lazy_fetch=False))
+    c = app.test_client()
+    conn = db.connect(str(tmp_path / "r.sqlite3"))
+    s1, e1 = local_day_bounds(date(2026, 1, 15))
+    db.upsert_prices(conn, "FI", [(t, 15, 50.0) for t in range(s1, e1, 900)], "test")
+    r = c.get("/api/prices/range?start=2026-01-15&end=2026-01-16").get_json()
+    assert r["start"] == s1 and r["step"] == 900 and len(r["prices"]) == 192
+    assert r["prices"][0] == 5.0 and r["prices"][100] is None
+    assert c.get("/api/prices/range?start=2026-01-16&end=2026-01-15").status_code == 400
+    assert c.get("/api/prices/range?start=2024-01-01&end=2026-01-15").status_code == 400

@@ -8,7 +8,7 @@ from flask import Flask, abort, g, jsonify, request
 
 from . import db, heating, prices
 from .config import Config
-from .timeutil import HEL, today_local
+from .timeutil import HEL, local_day_bounds, today_local
 
 
 def _loads(text, default=None):
@@ -123,6 +123,23 @@ def create_app(config=None):
         if not complete:
             return cache_for(resp, incomplete_max_age(day))
         return cache_for(resp, YEAR_MONTH if day < today_local() else 86400)
+
+    @app.get("/api/prices/range")
+    def api_prices_range():
+        """Hintahistoria aikaväliltä yhdellä pyynnöllä (oma kulutus -analyysi): 15 min jaksot,
+        c/kWh ALV 0. Päivät paikallisina päivinä, loppupäivä mukaan lukien, enintään 400 vrk."""
+        start_day = parse_day(request.args.get("start"))
+        end_day = parse_day(request.args.get("end"))
+        if end_day < start_day:
+            abort(400, "Loppupäivä ennen alkupäivää")
+        if (end_day - start_day).days > 400:
+            abort(400, "Enintään 400 vuorokautta kerrallaan")
+        start, _ = local_day_bounds(start_day)
+        _, end = local_day_bounds(end_day)
+        slots = prices.slot_prices(get_db(), cfg.area, start, end)
+        values = [None if t not in slots else round(slots[t] / 10, 4) for t in range(start, end, 900)]
+        resp = jsonify({"start": start, "step": 900, "unit": "c/kWh, ALV 0 %", "prices": values})
+        return cache_for(resp, YEAR_MONTH if end_day < today_local() else 600)
 
     @app.get("/api/health")
     def api_health():

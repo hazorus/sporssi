@@ -7,7 +7,7 @@ AddCharset utf-8 .txt
   <FilesMatch "\.(js|css|svg|woff2?)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
-  <FilesMatch "^(index\.html|muutokset\.html|config\.js|sw\.js|manifest\.webmanifest)$">
+  <FilesMatch "^(index\.html|muutokset\.html|kulutus\.html|config\.js|sw\.js|manifest\.webmanifest)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>

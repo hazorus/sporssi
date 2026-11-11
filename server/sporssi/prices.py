@@ -44,6 +44,11 @@ def _slot_prices(conn, area, start_utc, end_utc):
     return out
 
 
+def slot_prices(conn, area, start_utc, end_utc):
+    """Julkinen: 15 min jaksojen hinnat {start: €/MWh}."""
+    return _slot_prices(conn, area, start_utc, end_utc)
+
+
 def day_is_complete(conn, area, day):
     start, end = local_day_bounds(day)
     return len(_slot_prices(conn, area, start, end)) == (end - start) // SLOT

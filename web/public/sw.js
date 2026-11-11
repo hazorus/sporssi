@@ -88,7 +88,7 @@ async function pruneAssets(html) {
   for (const req of await cache.keys()) {
     const path = new URL(req.url).pathname;
     const i = path.indexOf('assets/');
-    if (i >= 0 && !current.has(path.slice(i)) && !path.includes('assets/muutokset-')) await cache.delete(req);
+    if (i >= 0 && !current.has(path.slice(i)) && !path.includes('assets/muutokset-') && !path.includes('assets/kulutus-')) await cache.delete(req);
   }
 }
 

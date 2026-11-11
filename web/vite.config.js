@@ -12,7 +12,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     rollupOptions: {
-      input: { main: 'index.html', muutokset: 'muutokset.html' },
+      input: { main: 'index.html', muutokset: 'muutokset.html', kulutus: 'kulutus.html' },
     },
     chunkSizeWarningLimit: 900,
   },

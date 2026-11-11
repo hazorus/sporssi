@@ -544,6 +544,13 @@
   </section>
 
   <section class="card">
+    <h2>Oma kulutus</h2>
+    <p>Lataa Datahubista tai sähköyhtiöltä saamasi kulutustiedot ja katso, mitä sähkösi on maksanut pörssihinnalla ja
+      kiinteällä hinnalla, mitkä tunnit ovat olleet kalleimpia ja paljonko ajoittaminen olisi säästänyt.</p>
+    <p><a href="./kulutus.html"><b>Analysoi oma kulutuksesi →</b></a></p>
+  </section>
+
+  <section class="card">
     <NowCosts part="future" devices={scheduled} priceAt={nowPriceAt} {nowMs} lastKnownMs={nowPrices.last} {scheme} {unit} />
   </section>
 
@@ -568,7 +575,8 @@
     <p class="version"><a href="./muutokset.html" title="Muutoshistoria">Spörssi versio {VERSION}</a>
       · © 2026 hazorus · Lisenssi <a href="./LICENSE.txt">EUPL-1.2</a>
       · <a href="https://github.com/hazorus/sporssi">Lähdekoodi</a>
-      · <a href="./third-party-licenses.txt">Kolmansien osapuolten lisenssit</a></p>
+      · <a href="./third-party-licenses.txt">Kolmansien osapuolten lisenssit</a>
+      · <a href="./kulutus.html">Oma kulutus</a></p>
   </footer>
 </div>
 

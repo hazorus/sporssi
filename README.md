@@ -28,6 +28,10 @@ kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin h
   lämmin vesi ja rakennuksen lämmitys (kWh ja €) sekä summat. Lämmin vesi lasketaan henkilömäärästä
   (oletus 2,5 kWh/hlö/vrk, Motiva) joko ajastetulla varaajalla tai tasaisena kulutuksena.
 - Kustannukset näytetään sentin tarkkuudella.
+- **Oma kulutus** (`kulutus.html`): Datahubin asiakasportaalista ladattu kulutus-CSV (tai sähköyhtiön
+  aika;kulutus-tiedosto) analysoidaan selaimessa pörssihintahistoriaa vasten (`/api/prices/range`):
+  kustannus pörssi- ja kiinteällä hinnalla, kalleimmat tunnit ja päivät, vuorokausiprofiili, mitattu
+  peruskulutus, vinkit ja arvio ajoittamalla saatavasta säästöstä. Kulutustietoja ei lähetetä palvelimelle.
 - **Asennettava sovellus (PWA)**: manifest, kuvakkeet ja service worker. Androidissa (Chrome, Edge)
   otsikon "📲 Asenna" -painike asentaa sovelluksen aloitusnäytölle; iPhonessa painike näyttää ohjeen
   (Safari → Jaa → Lisää Koti-valikkoon). Ilman verkkoa näytetään viimeksi haetut tiedot.
