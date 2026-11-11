@@ -214,6 +214,27 @@
     }),
   );
 
+  // Hintakaavion laitekerrokset: enintään 3 laitetta, kullakin pysyvä väripaikka (slot).
+  const MAX_OVERLAYS = 3;
+  let overlaySlots = $state((() => {
+    const v = loadOr('sporssi.overlays', []);
+    return Array.from({ length: MAX_OVERLAYS }, (_, i) => (Array.isArray(v) && typeof v[i] === 'string' ? v[i] : null));
+  })());
+  $effect(() => save('sporssi.overlays', $state.snapshot(overlaySlots)));
+  const overlayCandidates = $derived(scheduled.filter((s) => s.dev.kind !== 'continuous'));
+  const overlays = $derived(overlaySlots
+    .map((id, slot) => {
+      const s = id && overlayCandidates.find((c) => c.key === id);
+      return s ? { ...s, slot } : null;
+    })
+    .filter(Boolean));
+  function toggleOverlay(id) {
+    const i = overlaySlots.indexOf(id);
+    if (i >= 0) { overlaySlots[i] = null; return; }
+    const free = overlaySlots.findIndex((x, k) => x === null || !overlayCandidates.some((c) => c.key === overlaySlots[k]));
+    if (free >= 0) overlaySlots[free] = id;
+  }
+
   // Lämmin vesi: varaaja lämmittää vuorokauden tarpeen ajastettuna tai kulutus jaetaan tasaisesti.
   const DISTRICT = 'kaukolampo';
   const district = $derived(heatCfg.system === DISTRICT);
@@ -409,7 +430,25 @@
         värialueet eivät vielä kuvaa vuoden tasoa. Ylläpitäjä: aja <code>python -m sporssi.cli backfill --days 400</code>.</p>
     {/if}
     {#if summary}
-      <PriceChart {scheme} label={priceChartLabel} rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit} />
+      {#if overlayCandidates.length}
+        <div class="overlay-pick" role="group" aria-label="Näytä laitteiden käyttöjaksot hintakaaviossa">
+          <span class="muted">Näytä kaaviossa:</span>
+          {#each overlayCandidates as c (c.key)}
+            {@const slot = overlaySlots.indexOf(c.key)}
+            {@const full = slot < 0 && overlays.length >= MAX_OVERLAYS}
+            <button type="button" class="ov" class:on={slot >= 0} aria-pressed={slot >= 0} disabled={full}
+              title={full ? 'Enintään 3 laitetta kerrallaan' : ''} style={slot >= 0 ? `--c: var(--ov${slot + 1})` : ''}
+              onclick={() => toggleOverlay(c.key)}>{c.dev.name}</button>
+          {/each}
+        </div>
+      {/if}
+      <PriceChart {scheme} label={priceChartLabel} rows={settings.resolution === 'quarter' ? daySlots : hours} {settings} {bands} {nowMs} {unit}
+        {overlays} costAt={priceAt} />
+      {#if overlays.length}
+        <p class="small muted">Laitteen kaistassa täytetty palkki on halvin käyttöjakso ja katkoviivakehys valittu
+          aloitusaika. Viiva näyttää käyttökerran hinnan (€, oikea asteikko), jos laite käynnistetään kyseisellä
+          {settings.resolution === 'quarter' ? 'vartilla' : 'tunnilla'}.</p>
+      {/if}
       <div class="row small legend">
         {#each ['cheap', 'green', 'yellow', 'red'] as c}
           <span><span class="swatch c-{c}"></span> {CLASS_LABELS[c]}</span>
@@ -474,6 +513,10 @@
   .big { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
   .legend { gap: 1rem; margin: .2rem 0 .6rem; }
   .table-toggle summary { font-weight: 600; margin: .4rem 0; }
+  .overlay-pick { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .2rem 0 .5rem; }
+  /* Valittu: laitteen värinen kehys ja täplä; teksti normaalivärinen (kontrasti) */
+  .ov.on { border: 2px solid var(--c); font-weight: 600; }
+  .ov.on::before { content: '●'; color: var(--c); margin-right: .3rem; }
   .cost-toggle > summary { cursor: pointer; }
   .cost-toggle > summary h2 { display: inline; margin: 0; }
   .cost-toggle[open] > summary { margin-bottom: .5rem; }

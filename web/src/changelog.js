@@ -2,6 +2,19 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.2',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Uudet ominaisuudet',
+        items: [
+          'Hintakaavioon voi valita enintään kolme laitetta: kaavion yläosaan tulee kullekin oma kaista, jossa halvin käyttöjakso on täytetty palkki ja valittu aloitusaika katkoviivakehys.',
+          'Valituille laitteille käyttökerran hinta eri aloitusajoilla €-viivana (oma asteikko oikeassa reunassa, 0 € samalla korkeudella kuin 0 c/kWh); hinnat myös hintakaavion vihjeessä.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.1',
     date: '2026-11-11',
     sections: [

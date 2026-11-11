@@ -15,6 +15,10 @@
   --row-alt: #f7f9f7;
   --now: #2463d6;
   --cost: #2463d6;   /* kustannuspalkit (tarkistettu värisokeille vihreän rinnalla) */
+  /* Hintakaavion laitekerrokset (tarkistettu keskenään värisokeille, enintään 3) */
+  --ov1: #2a78d6;
+  --ov2: #eb6834;
+  --ov3: #c2457a;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -31,6 +35,9 @@
     --row-alt: #1f2622;
     --now: #6f9bff;
     --cost: #4f86f0;
+    --ov1: #3987e5;
+    --ov2: #d95926;
+    --ov3: #d4469a;
     --green: #4caf50;
     --yellow: #e4b200;
   }
