@@ -110,10 +110,11 @@
         axisLabel: { show: !narrow, color: muted, formatter: (v) => `${fmtPrice(v, v < 1 ? 2 : 1)} €` },
         splitLine: { lineStyle: { color: border } },
       }, {
-        type: 'value', gridIndex: 1, min: t0, max: t1, interval: 6 * 3600000, position: 'top',
+        type: 'value', gridIndex: 1, min: t0, max: t1, interval: (narrow && t1 - t0 > 30 * 3600000 ? 12 : 6) * 3600000, position: 'top',
         axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
         // Päivän lopun 00 jätetään pois: tilalla on hinta-asteikon yksikkö.
-        axisLabel: { show: hasLine, color: muted, formatter: (v) => (v >= t1 - 60000 ? '' : hhmm(v).slice(0, 2)) },
+        // Viimeinen merkintä pois (tilalla yksikkö); vuorokauden vaihteessa viikonpäivä.
+        axisLabel: { show: hasLine, color: muted, formatter: (v) => (v >= t1 - 60000 ? '' : hhmm(v) === '00:00' && v > t0 ? weekdayShort(v) : hhmm(v).slice(0, 2)) },
       }],
       yAxis: [{
         type: 'category', data: list.map((r) => r.dev.name),
@@ -145,8 +146,8 @@
         symbol: 'circle', symbolSize: Math.round(fs * 0.9),
         itemStyle: { color: npColor, borderColor: cssVar('--card'), borderWidth: 2, opacity: 1 },
         label: {
-          // Puhelimessa hinta näytetään kaavion yläpuolella, ettei se peitä laitteiden nimiä.
-          show: !narrow, position: labelLeft ? 'left' : 'right', distance: Math.round(fs * 0.5),
+          // Hinta näytetään kaavion yläpuolella, ettei lappu peitä palkkien arvoja.
+          show: false, position: labelLeft ? 'left' : 'right', distance: Math.round(fs * 0.5),
           formatter: `nyt ${fmtPrice(np.v)} ${unit}`, color: cssVar('--text'), fontWeight: 'bold',
           backgroundColor: cssVar('--card'), borderColor: npColor, borderWidth: 1.5, borderRadius: 4,
           padding: [Math.round(fs * 0.15), Math.round(fs * 0.4)],
@@ -267,13 +268,14 @@
     <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen eri aloitusaikoina.</p>
   {/if}
 {:else if part === 'now'}
-  {#if screen.narrow && nowPrice && nowPrice.v !== null}
+  {#if nowPrice && nowPrice.v !== null}
     <p class="nowprice"><span class="swatch c-{nowPrice.cls}" aria-hidden="true"></span>
       Sähkö nyt <b>{fmtPrice(nowPrice.v)} {unit}</b></p>
   {/if}
   <div class="chart" role="img" aria-label={nowLabel} style="height: {Math.max(140, remPx() * (screen.narrow ? 1.6 + usable.length * 3 : 2.5 + usable.length * 2.2))}px" use:echart={nowOption}></div>
   <p class="small muted">Kustannus lasketaan käytön ajan varttihinnoilla ({unit}) alkaen kuluvasta vartista.
-    Taustalla tämän päivän pörssisähkön hinta: kellonajat yläreunassa, hinta ({unit}) oikeassa reunassa; piste näyttää hinnan nyt.
+    Taustalla pörssisähkön hinta tänään klo 00:sta niin pitkälle kuin hintoja on tiedossa: kellonajat yläreunassa,
+    hinta ({unit}) oikeassa reunassa; piste näyttää hinnan nyt.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 {:else}
   <!-- Oletuksena suljettu; kaavio piirretään vasta avattaessa. -->

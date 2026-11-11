@@ -32,7 +32,14 @@
     geo: null, geoAsked: null,
   };
 
-  let settings = $state(load('sporssi.settings', DEFAULT_SETTINGS));
+  let settings = $state((() => {
+    const raw = loadOr('sporssi.settings', null);
+    const s = load('sporssi.settings', DEFAULT_SETTINGS);
+    // Aiempi oletusyläraja 40 c/kWh -> 50 c/kWh (käyttäjän itse asettama muu arvo säilyy).
+    if (raw && (raw.scaleVersion ?? 1) < 2 && Number(raw.yMax) === 40) s.yMax = 50;
+    s.scaleVersion = 2;
+    return s;
+  })());
   // Ensikäynnillä valittuna tyypillisimmät kodinkoneet.
   const DEFAULT_SELECTION = Object.fromEntries([
     ['pyykinpesukone-60', '18:00'], ['astianpesukone', '19:00'], ['vedenkeitin', '07:00'],
@@ -208,10 +215,15 @@
     return { map: m, last };
   });
   const nowPriceAt = $derived((t) => nowPrices.map.get(t) ?? null);
-  // Tämän päivän hintakäyrä Laitteiden käyttö nyt -kaavion taustalle.
-  const todayLine = $derived((days[today]?.slots ?? []).map((s) => ({
-    t: s.t, v: userPrice(s.spot, settings), cls: classify(s.spot, bands),
-  })));
+  // Hintakäyrä Laitteiden käyttö nyt -kaavion taustalle: tänään klo 00:sta niin pitkälle kuin hintoja on.
+  const todayLine = $derived.by(() => {
+    const out = [];
+    for (const s of [...(days[today]?.slots ?? []), ...(days[addDays(today, 1)]?.slots ?? [])]) {
+      if (s.spot === null) { if (s.t > nowMs) break; continue; }
+      out.push({ t: s.t, v: userPrice(s.spot, settings), cls: classify(s.spot, bands) });
+    }
+    return out;
+  });
 
   const summary = $derived.by(() => {
     const vals = chartSlots.filter((s) => s.spot !== null).map((s) => ({ t: s.t, v: userPrice(s.spot, settings), spot: s.spot }));
@@ -424,6 +436,10 @@
       <input type="date" aria-label="Valitse päivä" value={date} min={available?.first} max={addDays(today, 1)}
         onchange={(e) => e.currentTarget.value && (date = e.currentTarget.value)} />
       <span class="spacer"></span>
+      {#if !settings.autoScale}
+        <label class="ymax">Asteikko enintään
+          <input type="number" min="5" max="500" step="5" bind:value={settings.yMax} /> c/kWh</label>
+      {/if}
       <div class="seg" role="group" aria-label="Tarkkuus">
         <button type="button" aria-pressed={settings.resolution === 'hour'} class:on={settings.resolution === 'hour'} onclick={() => (settings.resolution = 'hour')}>Tunti</button>
         <button type="button" aria-pressed={settings.resolution === 'quarter'} class:on={settings.resolution === 'quarter'} onclick={() => (settings.resolution = 'quarter')}>15 min</button>
@@ -549,6 +565,8 @@
   .legend { gap: 1rem; margin: .2rem 0 .6rem; }
   .table-toggle summary { font-weight: 600; margin: .4rem 0; }
   .past { display: block; margin: -.3rem 0 .6rem; }
+  .ymax { display: inline-flex; align-items: center; gap: .4rem; }
+  .ymax input { width: 5rem; }
   .overlay-pick { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .2rem 0 .5rem; }
   /* Valittu: laitteen värinen kehys ja täplä; teksti normaalivärinen (kontrasti) */
   .ov.on { border: 2px solid var(--c); font-weight: 600; }

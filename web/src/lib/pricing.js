@@ -14,7 +14,8 @@ export const DEFAULT_SETTINGS = {
   showPast: false, // hintakaaviossa myös tämän päivän kuluneet tunnit
   autoScale: false,
   yMin: -5,
-  yMax: 40,
+  yMax: 50,
+  scaleVersion: 2, // 2: oletusyläraja 50 c/kWh
   bandK1: 1, // vihreä alue: keskihinta ± k1 · hajonta
   bandK2: 2, // punainen: yli keskihinta + k2 · hajonta
 };

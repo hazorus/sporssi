@@ -2,6 +2,19 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.4',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Muutokset',
+        items: [
+          'Laitteiden käyttö nyt -kaavion taustalla hinta tänään klo 00:sta niin pitkälle kuin hintoja on tiedossa (myös huominen); hinta nyt kaavion yläpuolella.',
+          'Hintakaavion asteikon oletusyläraja 50 c/kWh; ylärajaa voi muuttaa suoraan kaavion yläpuolelta (muistetaan selaimessa).',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.3',
     date: '2026-11-11',
     sections: [
