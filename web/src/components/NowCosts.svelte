@@ -8,6 +8,7 @@
   const nowPrice = $derived(priceLine.find((p) => nowMs >= p.t && nowMs < p.t + SLOT_MS) ?? null);
 
   let relative = $state(false);
+  let futureOpen = $state(false);
 
   // Hiiren alla olevan laitteen nimi korostetaan selitteessä ja työkaluvihjeessä.
   let hovered = null;
@@ -268,26 +269,35 @@
     Taustalla tämän päivän pörssisähkön hinta: kellonajat yläreunassa, hinta ({unit}) oikeassa reunassa; piste näyttää hinnan nyt.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 
-  <div class="row">
-    <h3>Käyttökustannus eri aloitusaikoina</h3>
-    <span class="spacer"></span>
-    <div class="seg" role="group" aria-label="Asteikko">
-      <button type="button" aria-pressed={!relative} class:on={!relative} onclick={() => (relative = false)}>€</button>
-      <button type="button" aria-pressed={relative} class:on={relative} onclick={() => (relative = true)}>% nykyhetkestä</button>
-    </div>
-  </div>
-  {#if starts.length > 1}
-    <div class="chart" role="img" aria-label={futureLabel} style="height: {320 + legendRows * remPx() * 1.6}px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
-    <p class="small muted">Jokainen viiva näyttää, mitä laitteen käyttökerta maksaa, jos se käynnistetään kyseisellä
-      tunnilla{#if relative}, prosentteina siitä, mitä se maksaisi heti käynnistettynä{/if}. Viiva päättyy, kun käyttö
-      jatkuisi yli tunnettujen hintojen. Laitteen voi piilottaa napsauttamalla sen nimeä.</p>
-  {:else}
-    <p class="muted">Tulevien tuntien hintoja ei vielä ole.</p>
-  {/if}
+  <!-- Oletuksena suljettu; kaavio piirretään vasta avattaessa. -->
+  <details class="future" bind:open={futureOpen}>
+    <summary><h3>Käyttökustannus eri aloitusaikoina</h3></summary>
+    {#if futureOpen}
+      <div class="row seg-row">
+        <span class="spacer"></span>
+        <div class="seg" role="group" aria-label="Asteikko">
+          <button type="button" aria-pressed={!relative} class:on={!relative} onclick={() => (relative = false)}>€</button>
+          <button type="button" aria-pressed={relative} class:on={relative} onclick={() => (relative = true)}>% nykyhetkestä</button>
+        </div>
+      </div>
+      {#if starts.length > 1}
+        <div class="chart" role="img" aria-label={futureLabel} style="height: {320 + legendRows * remPx() * 1.6}px" use:echart={{ option: futureOption, setup: setupFuture }}></div>
+        <p class="small muted">Jokainen viiva näyttää, mitä laitteen käyttökerta maksaa, jos se käynnistetään kyseisellä
+          tunnilla{#if relative}, prosentteina siitä, mitä se maksaisi heti käynnistettynä{/if}. Viiva päättyy, kun käyttö
+          jatkuisi yli tunnettujen hintojen. Laitteen voi piilottaa napsauttamalla sen nimeä.</p>
+      {:else}
+        <p class="muted">Tulevien tuntien hintoja ei vielä ole.</p>
+      {/if}
+    {/if}
+  </details>
 {/if}
 
 <style>
   .chart { width: 100%; }
   .nowprice { margin: 0 0 .3rem; }
   h3 { margin-top: .4rem; }
+  details.future { margin-top: .6rem; }
+  details.future > summary { cursor: pointer; }
+  details.future > summary h3 { display: inline; margin: 0; }
+  .seg-row { margin: .4rem 0; }
 </style>
