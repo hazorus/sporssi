@@ -8,3 +8,7 @@ var/
 web/node_modules/
 web/dist/
 .env
+# palvelimen asetukset (ENTSO-E-token ym.) eivät kuulu versionhallintaan
+sporssi.env
+*.env
+!deploy/*.env.example
