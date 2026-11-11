@@ -1,7 +1,7 @@
 {
   "name": "sporssi-web",
   "private": true,
-  "version": "1.7.1",
+  "version": "1.7.2",
   "license": "EUPL-1.2",
   "author": "hazorus",
   "type": "module",

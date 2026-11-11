@@ -85,14 +85,16 @@ def create_app(config=None):
         count = conn.execute("SELECT COUNT(*) FROM prices WHERE area = ?", (cfg.area,)).fetchone()[0]
         with stats_lock:
             hit = stats_cache.get(days)
+        # Saatavilla oleva jakso luetaan aina kannasta (kevyt), jotta historian haku näkyy heti.
+        available = prices.available_days(conn, cfg.area)
         if hit and hit["day"] == today:
-            st = hit["value"][0]
+            st = hit["value"]
             if (st and st["coverage"] >= 0.9) or hit["count"] == count:
-                return hit["value"]
-        value = (prices.stats(conn, cfg.area, days), prices.available_days(conn, cfg.area))
+                return st, available
+        st = prices.stats(conn, cfg.area, days)
         with stats_lock:
-            stats_cache[days] = {"day": today, "count": count, "value": value}
-        return value
+            stats_cache[days] = {"day": today, "count": count, "value": st}
+        return st, available
 
     def parse_day(value):
         if not value:

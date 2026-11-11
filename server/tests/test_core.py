@@ -262,3 +262,16 @@ def test_backfill_skips_complete_and_survives_errors(tmp_path, monkeypatch, caps
     # Kaksi ensimmäistä jaksoa ovat nyt täysiä ja ohitetaan; viimeisessä on huominen, joka puuttuu.
     assert len(calls) <= 1
     assert "ohitettu" in capsys.readouterr().out
+
+
+def test_stats_available_fresh_after_backfill(tmp_path):
+    app = create_app(Config(db_path=str(tmp_path / "s.sqlite3"), lazy_fetch=False))
+    c = app.test_client()
+    with app.app_context():
+        conn = db.connect(str(tmp_path / "s.sqlite3"))
+        now = int(time.time()) // 3600 * 3600
+        db.upsert_prices(conn, "FI", [(now - h * 3600, 60, 40.0) for h in range(24 * 365)], "test")
+        first = c.get("/api/stats").get_json()["available"]["first"]
+        db.upsert_prices(conn, "FI", [(now - 3 * 365 * 86400, 60, 40.0)], "test")
+        later = c.get("/api/stats").get_json()["available"]["first"]
+    assert later < first

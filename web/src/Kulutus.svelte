@@ -71,7 +71,7 @@
     const map = new Map();
     try {
       // Haetaan vain sieltä, mistä palvelimella on hintahistoriaa.
-      const st = await fetch(`${base}/stats`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const st = await fetch(`${base}/stats`, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       priceFirst = st?.available?.first ?? null;
       if (priceFirst && priceFirst > first) first = priceFirst;
       let d = first;
@@ -79,6 +79,7 @@
         let e = addDays(d, 365);
         if (e > last) e = last;
         const res = await fetch(`${base}/prices/range?start=${d}&end=${e}`);
+        if (res.status === 404) throw new Error('palvelimen ohjelmisto on vanhempi kuin sivu (palvelin pitää käynnistää uudelleen).');
         if (!res.ok) throw new Error(`hintahistoria: ${res.status}`);
         const j = await res.json();
         j.prices.forEach((v, i) => { if (v !== null) map.set((j.start + i * j.step) * 1000, v); });

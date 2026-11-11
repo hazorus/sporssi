@@ -2,6 +2,19 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.7.2',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Korjaukset',
+        items: [
+          'Oma kulutus: palvelimelle haettu vanhempi hintahistoria otetaan analyysiin heti eikä vasta seuraavana päivänä.',
+          'Selkeämpi virheilmoitus, jos palvelimen ohjelmisto on sivua vanhempi.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.7.1',
     date: '2026-11-11',
     sections: [
