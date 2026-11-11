@@ -28,6 +28,8 @@
     persons: 3, waterPerPerson: 2.5, waterMode: 'varaaja', waterStart: '02:00', waterPower: 3,
     // Kaukolämmön energiamaksu c/kWh sis. ALV (perusmaksu ei mukana). Tarkista oma hinta lämpöyhtiöltä.
     dhPrice: 10,
+    // Asunnon peruskulutus (aina päällä olevat laitteet): kerrostalo | omakotitalo | oma | ei
+    baseMode: 'kerrostalo', baseW: 60,
     // Selaimen sijainti pyöristettynä 0,1 asteeseen, esim. "geo:60.2,24.9"; geoAsked: granted|denied
     geo: null, geoAsked: null,
   };
@@ -292,9 +294,21 @@
     };
   });
 
-  // Loppusummataulukko: kodinkoneet yhtenä sarakkeena + lämmin vesi + rakennuksen lämmitys.
+  // Peruskulutus: tasainen teho koko vuorokauden (kylmälaitteet, ilmanvaihto, valmiustilat).
+  const BASE_PRESETS = { kerrostalo: 60, omakotitalo: 170 };
+  const baseW = $derived(heatCfg.baseMode === 'ei' ? 0
+    : heatCfg.baseMode === 'oma' ? Math.max(0, Number(heatCfg.baseW) || 0)
+      : BASE_PRESETS[heatCfg.baseMode] ?? 60);
+  const baseDev = $derived({ id: 'peruskulutus', name: 'Peruskulutus', kind: 'continuous',
+    annual_kwh: (baseW * 24 * 365) / 1000, duration_min: 1440 });
+  // Peruskulutukseen jo sisältyvät laitteet, jos ne on valittu myös laitteista (kaksinkertainen laskenta).
+  const BASE_OVERLAP = ['jaakaappi', 'pakastin', 'jaakaappipakastin', 'ilmanvaihto'];
+  const baseOverlap = $derived(baseW > 0 ? scheduled.filter((s) => BASE_OVERLAP.includes(s.key)).map((s) => s.dev.name) : []);
+
+  // Loppusummataulukko: kodinkoneet yhtenä sarakkeena + peruskulutus + lämmin vesi + rakennuksen lämmitys.
   const tableColumns = $derived([
     { key: 'appliances', name: 'Kodinkoneet', short: 'Koneet', title: 'Valittujen kodinkoneiden yhteenlaskettu kulutus' },
+    ...(baseW > 0 ? [{ key: 'base', name: 'Peruskulutus', short: 'Perus', title: 'Aina päällä olevat laitteet' }] : []),
     { key: 'water', name: 'Lämmin vesi', short: waterDistrict ? 'Vesi (KL)' : 'Vesi', tiny: waterDistrict ? 'Vesi KL' : 'Vesi',
       title: waterDistrict ? 'Lämmin vesi (kaukolämpö)' : 'Lämmin vesi' },
     { key: 'heating', name: 'Rakennuksen lämmitys', short: district ? 'Lämmitys (KL)' : 'Lämmitys', tiny: district ? 'Lämm. KL' : 'Lämm.',
@@ -302,6 +316,7 @@
   ]);
   const tableDevices = $derived([
     ...scheduled.map((s) => ({ ...s, key: 'appliances' })),
+    ...(baseW > 0 ? [{ key: 'base', dev: baseDev, startMs: daySlots[0]?.t ?? 0 }] : []),
     {
       key: 'water', dev: waterDev, startMs: startMsFor(daySlots, waterDev.start ?? '00:00', hhmm),
       ...(waterDistrict ? { priceAt: dhPriceAt } : {}),
@@ -351,7 +366,8 @@
   // Vain valitun vuorokauden sisällä oleva kulutus (yli puolenyön jatkuva käyttö ei mukana).
   const shareParts = $derived.by(() => {
     const waterEntry = tableDevices.find((d) => d.key === 'water');
-    const res = schedule(daySlots, [...scheduled, ...(waterEntry ? [waterEntry] : [])], priceAt, heatExtra);
+    const baseEntry = tableDevices.find((d) => d.key === 'base');
+    const res = schedule(daySlots, [...scheduled, ...(baseEntry ? [baseEntry] : []), ...(waterEntry ? [waterEntry] : [])], priceAt, heatExtra);
     const sums = {};
     let heatingUnknown = false;
     for (const r of res.rows) {
@@ -363,6 +379,7 @@
       }
     }
     const parts = scheduled.map((s) => ({ key: s.key, name: s.dev.name, group: 'appliance', ...(sums[s.key] ?? { kwh: 0, eur: 0 }) }));
+    if (sums.base) parts.push({ key: 'base', name: 'Peruskulutus', group: 'base', ...sums.base });
     parts.push({ key: 'water', name: waterDistrict ? 'Lämmin vesi (kaukolämpö)' : 'Lämmin vesi', group: 'water', ...(sums.water ?? { kwh: 0, eur: 0 }) });
     parts.push({ key: 'heating', name: district ? 'Rakennuksen lämmitys (kaukolämpö)' : 'Rakennuksen lämmitys', group: 'heating', ...(sums.heating ?? { kwh: 0, eur: 0 }) });
     return { parts, heatingUnknown };
@@ -510,8 +527,8 @@
   </section>
 
   <section class="card">
-    <h2>Rakennuksen lämmitys ja lämmin vesi</h2>
-    <Heating options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} costHours={heatCostHours} {geoStatus} onlocate={() => locate(true)} />
+    <h2>Lämmitys, lämmin vesi ja peruskulutus</h2>
+    <Heating {baseW} {baseOverlap} options={heatOptions} bind:cfg={heatCfg} data={heatData} error={heatError} loading={heatLoading} water={waterDev} costHours={heatCostHours} {geoStatus} onlocate={() => locate(true)} />
   </section>
 
   <section class="card" id="laitteet">

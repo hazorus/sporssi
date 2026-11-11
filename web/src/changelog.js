@@ -2,6 +2,18 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.6',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Uudet ominaisuudet',
+        items: [
+          'Asunnon peruskulutus (aina päällä olevat laitteet): kerrostalo n. 60 W, omakotitalo n. 170 W tai oma mitattu arvo. Näkyy kustannustaulukossa ja kulutusjakaumassa; varoitus, jos kylmälaitteet tai ilmanvaihto on valittu myös laitteista.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.5',
     date: '2026-11-11',
     sections: [

@@ -5,7 +5,8 @@
   import { persistOpen } from '../lib/persist.js';
   import { hhmm, fmtKwh, fmtPrice, fmtEur } from '../lib/pricing.js';
 
-  let { options, cfg = $bindable(), data, error, loading, water, costHours = [], geoStatus = '', onlocate } = $props();
+  let { options, cfg = $bindable(), data, error, loading, water, costHours = [], geoStatus = '', onlocate,
+    baseW = 0, baseOverlap = [] } = $props();
   const canLocate = typeof navigator !== 'undefined' && 'geolocation' in navigator;
   const costByHour = $derived(new Map(costHours.map((c) => [c.t, c])));
   const chartLabel = $derived.by(() => {
@@ -216,8 +217,36 @@
   </p>
 {/if}
 
+<h3 class="water">Peruskulutus</h3>
+<p class="small muted">Aina päällä olevat laitteet: kylmälaitteet, ilmanvaihto, reititin ja muut valmiustilat.
+  Kulutus on sama silloinkin, kun kotona ei ole ketään.</p>
+<div class="row controls">
+  <label class="field">Asunto
+    <select bind:value={cfg.baseMode}>
+      <option value="kerrostalo">kerrostaloasunto (n. 60 W)</option>
+      <option value="omakotitalo">omakotitalo (n. 170 W)</option>
+      <option value="oma">oma mitattu arvo</option>
+      <option value="ei">ei mukana laskelmissa</option>
+    </select>
+  </label>
+  {#if cfg.baseMode === 'oma'}
+    <label class="field">Teho, W <input type="number" min="0" step="5" bind:value={cfg.baseW} /></label>
+  {/if}
+</div>
+{#if baseW > 0}
+  <p class="small muted">Vuorokaudessa {fmtKwh(baseW * 24 / 1000)} kWh, vuodessa {Math.round(baseW * 8.76).toLocaleString('fi-FI')} kWh.
+    Oletukset: kerrostalo n. 1–2 kWh/vrk (kylmälaitteet ja valmiustilat; ilmanvaihto taloyhtiön),
+    omakotitalo n. 3–5 kWh/vrk (myös oma ilmanvaihtokone). Tarkimman arvon saat sähköyhtiösi tai Datahubin
+    tuntitiedoista: yöllinen kulutus (esim. klo 3–5) päivänä, jolloin kotona ei ole ollut ketään.</p>
+  {#if baseOverlap.length}
+    <p class="small warn-box">Peruskulutus sisältää jo nämä valitut laitteet: {baseOverlap.join(', ')}. Poista ne
+      laitteista tai valitse peruskulutukseksi oma arvo ilman niitä, ettei niitä lasketa kahdesti.</p>
+  {/if}
+{/if}
+
 <style>
   .controls { margin: .6rem 0; align-items: flex-end; }
+  .warn-box { border-left: 4px solid var(--yellow); padding: .3rem .6rem; background: var(--row-alt); }
   .locate { white-space: nowrap; }
   .chart { width: 100%; height: 17rem; }
   @media (max-width: 640px) { .chart { height: 20rem; } }
