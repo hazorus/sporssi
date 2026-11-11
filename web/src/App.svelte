@@ -185,6 +185,10 @@
     return { map: m, last };
   });
   const nowPriceAt = $derived((t) => nowPrices.map.get(t) ?? null);
+  // Tämän päivän hintakäyrä Laitteiden käyttö nyt -kaavion taustalle.
+  const todayLine = $derived((days[today]?.slots ?? []).map((s) => ({
+    t: s.t, v: userPrice(s.spot, settings), cls: classify(s.spot, bands),
+  })));
 
   const summary = $derived.by(() => {
     const vals = daySlots.filter((s) => s.spot !== null).map((s) => ({ t: s.t, v: userPrice(s.spot, settings), spot: s.spot }));
@@ -358,7 +362,7 @@
       <span class="spacer"></span>
       <a href="#laitteet">Valitse laitteet ({scheduled.length}) ↓</a>
     </div>
-    <NowCosts devices={scheduled} priceAt={nowPriceAt} {nowMs} lastKnownMs={nowPrices.last} {scheme} {unit} />
+    <NowCosts devices={scheduled} priceAt={nowPriceAt} {nowMs} lastKnownMs={nowPrices.last} {scheme} {unit} priceLine={todayLine} />
   </section>
 
   <section class="card">

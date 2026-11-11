@@ -4,7 +4,8 @@
   import { SLOT_MS, hhmm, weekdayShort, fmtEur, fmtKwh, fmtPrice, esc } from '../lib/pricing.js';
 
   // devices: [{key, dev}] valitut laitteet, priceAt: tämän päivän + huomisen hinnat
-  let { devices, priceAt, nowMs, lastKnownMs, scheme, unit } = $props();
+  let { devices, priceAt, nowMs, lastKnownMs, scheme, unit, priceLine = [] } = $props();
+  const nowPrice = $derived(priceLine.find((p) => nowMs >= p.t && nowMs < p.t + SLOT_MS) ?? null);
 
   let relative = $state(false);
 
@@ -66,12 +67,26 @@
     // Hinta näytetään palkin sisällä, kun palkki on tarpeeksi pitkä, muuten sen perässä
     // (lyhyen palkin perässä on aina tilaa), joten kaavion oikealle ei tarvita marginaalia.
     const max = Math.max(0.0001, ...list.map((r) => (r.eur === null ? 0 : r.eur)));
+    // Taustan hintakäyrä omassa koordinaatistossaan (tämän päivän klo 00–24), palkkien alla.
+    const line = priceLine.filter((p) => p.v !== null);
+    const hasLine = line.length > 1;
+    const vals = line.map((p) => p.v);
+    const yMin = Math.min(0, ...vals);
+    const yMax = Math.max(1, ...vals) * 1.15;
+    const t0 = priceLine[0]?.t ?? 0;
+    const t1 = (priceLine[priceLine.length - 1]?.t ?? 0) + SLOT_MS;
+    const np = nowPrice && nowPrice.v !== null ? nowPrice : null;
+    const npColor = np ? (np.cls === 'none' ? muted : cssVar(`--${np.cls}`)) : muted;
+    const labelLeft = np && (np.t - t0) / Math.max(1, t1 - t0) > 0.6;
     return {
       animation: false,
       // Puhelimessa laitteen nimi on palkin yläpuolella, jolloin palkit saavat koko leveyden.
-      grid: narrow
-        ? { left: 2, right: 2, top: fs * 1.3, bottom: 2 }
-        : { left: 8, right: fs * 1.6, top: 8, bottom: 8, containLabel: true },
+      grid: [
+        narrow
+          ? { left: 2, right: 2, top: fs * 1.3, bottom: 2 }
+          : { left: 8, right: fs * 1.6, top: 8, bottom: 8, containLabel: true },
+        { left: 0, right: 0, top: fs * 1.6, bottom: narrow ? 2 : fs * 1.8 },
+      ],
       tooltip: {
         trigger: 'item',
         formatter: (p) => {
@@ -84,12 +99,12 @@
           return s;
         },
       },
-      xAxis: {
+      xAxis: [{
         type: 'value', min: 0,
         axisLabel: { show: !narrow, color: muted, formatter: (v) => `${fmtPrice(v, v < 1 ? 2 : 1)} €` },
         splitLine: { lineStyle: { color: border } },
-      },
-      yAxis: {
+      }, { type: 'time', gridIndex: 1, min: t0, max: t1, show: false }],
+      yAxis: [{
         type: 'category', data: list.map((r) => r.dev.name),
         axisLabel: narrow
           ? { inside: true, align: 'left', verticalAlign: 'bottom', padding: [0, 0, Math.round(fs * 0.55), 0], color: cssVar('--text') }
@@ -97,9 +112,31 @@
         axisTick: { show: false },
         axisLine: { lineStyle: { color: border } },
         z: 3,
-      },
-      series: [{
-        type: 'bar', barMaxWidth: fs * 1.6, ...(narrow ? { barWidth: Math.round(fs * 0.8) } : {}),
+      }, { type: 'value', gridIndex: 1, min: yMin, max: yMax, show: false }],
+      series: [...(hasLine ? [{
+        type: 'line', xAxisIndex: 1, yAxisIndex: 1, z: 1, silent: true, step: 'end', showSymbol: false,
+        data: [...line.map((p) => [p.t, p.v]), [t1, line[line.length - 1].v]],
+        lineStyle: { color: muted, width: 2, opacity: narrow ? 0.35 : 0.45 },
+        areaStyle: { color: muted, opacity: 0.07 },
+        markLine: np ? {
+          silent: true, symbol: 'none', lineStyle: { color: cssVar('--now'), type: 'dashed', width: 1.5, opacity: 0.8 },
+          label: { show: false }, data: [{ xAxis: np.t }],
+        } : undefined,
+      }] : []), ...(hasLine && np ? [{
+        // Hinta nyt: korostettu piste ja arvo hintakäyrällä, palkkien päällä.
+        type: 'scatter', xAxisIndex: 1, yAxisIndex: 1, z: 5, silent: true,
+        data: [[np.t + SLOT_MS / 2, np.v]],
+        symbol: 'circle', symbolSize: Math.round(fs * 0.9),
+        itemStyle: { color: npColor, borderColor: cssVar('--card'), borderWidth: 2, opacity: 1 },
+        label: {
+          // Puhelimessa hinta näytetään kaavion yläpuolella, ettei se peitä laitteiden nimiä.
+          show: !narrow, position: labelLeft ? 'left' : 'right', distance: Math.round(fs * 0.5),
+          formatter: `nyt ${fmtPrice(np.v)} ${unit}`, color: cssVar('--text'), fontWeight: 'bold',
+          backgroundColor: cssVar('--card'), borderColor: npColor, borderWidth: 1.5, borderRadius: 4,
+          padding: [Math.round(fs * 0.15), Math.round(fs * 0.4)],
+        },
+      }] : []), {
+        type: 'bar', z: 3, barMaxWidth: fs * 1.6, ...(narrow ? { barWidth: Math.round(fs * 0.8) } : {}),
         data: list.map((r) => {
           const inside = r.eur !== null && r.eur >= max * 0.6;
           return {
@@ -119,7 +156,8 @@
   });
 
   // Kaavioiden tekstivastineet ruudunlukijalle.
-  const nowLabel = $derived(`Käyttökustannus, jos laite käynnistetään nyt klo ${hhmm(nowStart)}: `
+  const nowLabel = $derived(`Käyttökustannus, jos laite käynnistetään nyt klo ${hhmm(nowStart)}`
+    + (nowPrice && nowPrice.v !== null ? ` (sähkön hinta nyt ${fmtPrice(nowPrice.v)} ${unit})` : '') + ': '
     + rows.map((r) => `${r.dev.name} ${fmtEur(r.eur)}`).join(', ') + '.');
   const futureLabel = $derived('Halvin aloitusaika tunnettujen hintojen perusteella: '
     + rows.map((r) => (r.best ? `${r.dev.name} ${spoken(r.best.t)}, ${fmtEur(r.best.eur)}` : `${r.dev.name} ei tiedossa`)).join('; ') + '.');
@@ -208,8 +246,13 @@
 {#if usable.length === 0}
   <p class="muted"><a href="#laitteet">Valitse laitteita</a>, niin näet niiden käyttökustannuksen nyt ja tulevina tunteina.</p>
 {:else}
+  {#if screen.narrow && nowPrice && nowPrice.v !== null}
+    <p class="nowprice"><span class="swatch c-{nowPrice.cls}" aria-hidden="true"></span>
+      Sähkö nyt <b>{fmtPrice(nowPrice.v)} {unit}</b></p>
+  {/if}
   <div class="chart" role="img" aria-label={nowLabel} style="height: {Math.max(140, remPx() * (screen.narrow ? 1.6 + usable.length * 3 : 2.5 + usable.length * 2.2))}px" use:echart={nowOption}></div>
   <p class="small muted">Kustannus lasketaan käytön ajan varttihinnoilla ({unit}) alkaen kuluvasta vartista.
+    Taustalla tämän päivän pörssisähkön hinta klo 00–24; piste näyttää hinnan nyt.
     {#if skipped.length}Jatkuvasti käyvät laitteet ({skipped.map((d) => d.dev.name).join(', ')}) eivät ole tässä mukana.{/if}</p>
 
   <div class="row">
@@ -232,5 +275,6 @@
 
 <style>
   .chart { width: 100%; }
+  .nowprice { margin: 0 0 .3rem; }
   h3 { margin-top: .4rem; }
 </style>
