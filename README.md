@@ -181,6 +181,7 @@ sähköllä. Pakkasrajan (−25 °C) alapuolella lämpöpumpun COP on 1.
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd server
 ../.venv/bin/python -m sporssi.cli backfill --days 400   # vuoden historia tilastoja varten
+../.venv/bin/python -m sporssi.cli backfill --since 2020-01-01   # pitkä historia oman kulutuksen analyysiin
 ../.venv/bin/flask --app wsgi run -p 5000
 ```
 
@@ -206,6 +207,9 @@ cd web && npm test
 2. Luo `/etc/sporssi.env` mallista `deploy/sporssi.env.example`. Anna `www-data`-käyttäjälle
    kirjoitusoikeus tietokannan hakemistoon, esim. `/var/lib/sporssi`.
 3. Hae historia kerran: `python -m sporssi.cli backfill --days 400` (hakemistossa `server/`).
+   Oman kulutuksen analyysia varten voi hakea pidemmänkin historian, esim. `--since 2020-01-01`.
+   Jo täydet jaksot ohitetaan ja epäonnistuneet yritetään uudelleen, joten komennon voi ajaa
+   uudelleen, jos se keskeytyy.
 4. Käynnistä rajapinta: `deploy/sporssi.service` (gunicorn, 127.0.0.1:8050). Vaihtoehtoisesti
    `deploy/apache-sporssi-wsgi.conf` (mod_wsgi). mod_wsgi:n kanssa asetukset annetaan tiedostossa
    `/etc/sporssi.env` (Apachen `SetEnv` ei välity sovellukselle), ja koodipäivityksen jälkeen

@@ -236,3 +236,29 @@ def test_prices_range(tmp_path):
     assert r["prices"][0] == 5.0 and r["prices"][100] is None
     assert c.get("/api/prices/range?start=2026-01-16&end=2026-01-15").status_code == 400
     assert c.get("/api/prices/range?start=2024-01-01&end=2026-01-15").status_code == 400
+
+
+def test_backfill_skips_complete_and_survives_errors(tmp_path, monkeypatch, capsys):
+    from sporssi import cli
+    from sporssi.timeutil import today_local
+    monkeypatch.setenv("SPORSSI_DB", str(tmp_path / "b.sqlite3"))
+    monkeypatch.setattr(cli.time, "sleep", lambda s: None)
+    calls = []
+
+    def fake_fetch(conn, cfg, start, end):
+        calls.append(start)
+        if len(calls) == 2:
+            raise RuntimeError("verkkovirhe")
+        rows = [(t, 60, 50.0) for t in range(start - start % 3600, end, 3600)]
+        return db.upsert_prices(conn, cfg.area, rows, "test")
+
+    monkeypatch.setattr(cli.prices, "fetch_range", fake_fetch)
+    since = (today_local() - timedelta(days=20)).isoformat()
+    cli.main(["backfill", "--since", since, "--chunk", "10", "--retries", "1"])
+    first_run = len(calls)
+    assert first_run == 4  # 3 jaksoa, toinen yritetään uudelleen
+    calls.clear()
+    cli.main(["backfill", "--since", since, "--chunk", "10"])
+    # Kaksi ensimmäistä jaksoa ovat nyt täysiä ja ohitetaan; viimeisessä on huominen, joka puuttuu.
+    assert len(calls) <= 1
+    assert "ohitettu" in capsys.readouterr().out

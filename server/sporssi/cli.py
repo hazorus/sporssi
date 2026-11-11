@@ -2,6 +2,7 @@
 
   python -m sporssi.cli update            # tämän päivän ja huomisen hinnat + säät
   python -m sporssi.cli backfill --days 400
+  python -m sporssi.cli backfill --since 2020-01-01
   python -m sporssi.cli load-reference [data/reference_data.json]
   python -m sporssi.cli stats
 """
@@ -9,11 +10,12 @@
 import argparse
 import json
 import sys
-from datetime import timedelta
+import time
+from datetime import date, timedelta
 
 from . import db, heating, prices
 from .config import Config
-from .timeutil import local_day_bounds, today_local
+from .timeutil import SLOT, local_day_bounds, today_local
 
 
 def cmd_update(cfg, conn, args):
@@ -32,19 +34,48 @@ def cmd_update(cfg, conn, args):
             print(f"Sää epäonnistui ({loc_id}): {exc}", file=sys.stderr)
 
 
+def _chunk_complete(conn, area, first, last):
+    start, _ = local_day_bounds(first)
+    _, end = local_day_bounds(last)
+    return len(prices.slot_prices(conn, area, start, end)) == (end - start) // SLOT
+
+
 def cmd_backfill(cfg, conn, args):
+    """Hakee historiaa jaksoittain. Jo täydet jaksot ohitetaan (paitsi --force), ja epäonnistunut
+    jakso yritetään uudelleen; pysyvästi epäonnistuneet listataan lopuksi, eikä haku keskeydy."""
     today = today_local()
-    day = today - timedelta(days=args.days)
-    total = 0
+    if args.since:
+        day = date.fromisoformat(args.since)
+    else:
+        day = today - timedelta(days=args.days)
+    total, skipped, failed = 0, 0, []
     while day <= today + timedelta(days=1):
         chunk_end = min(day + timedelta(days=args.chunk), today + timedelta(days=2))
+        label = f"{day} – {chunk_end - timedelta(days=1)}"
+        if not args.force and _chunk_complete(conn, cfg.area, day, chunk_end - timedelta(days=1)):
+            skipped += 1
+            day = chunk_end
+            continue
         start, _ = local_day_bounds(day)
         end, _ = local_day_bounds(chunk_end)
-        n = prices.fetch_range(conn, cfg, start, end)
-        total += n
-        print(f"{day} – {chunk_end - timedelta(days=1)}: {n} riviä")
+        for attempt in range(1, args.retries + 2):
+            try:
+                n = prices.fetch_range(conn, cfg, start, end)
+                total += n
+                print(f"{label}: {n} riviä", flush=True)
+                break
+            except Exception as exc:
+                print(f"{label}: virhe ({exc})", file=sys.stderr, flush=True)
+                if attempt > args.retries:
+                    failed.append(label)
+                else:
+                    time.sleep(args.pause * 5 * attempt)
+        time.sleep(args.pause)
         day = chunk_end
-    print(f"Yhteensä {total} riviä")
+    print(f"Yhteensä {total} riviä, {skipped} valmista jaksoa ohitettu.")
+    if failed:
+        print("Epäonnistuneet jaksot (aja komento uudelleen, valmiit ohitetaan):", ", ".join(failed))
+        sys.exit(1)
 
 
 def cmd_load_reference(cfg, conn, args):
@@ -68,7 +99,11 @@ def main(argv=None):
     u.add_argument("--locations", help="paikkakunnat pilkulla eroteltuna (oletus helsinki)")
     b = sub.add_parser("backfill", help="hae historiaa taaksepäin")
     b.add_argument("--days", type=int, default=400)
+    b.add_argument("--since", help="alkupäivä VVVV-KK-PP (korvaa --days)")
     b.add_argument("--chunk", type=int, default=31, help="päivää per pyyntö")
+    b.add_argument("--force", action="store_true", help="hae myös jo täydet jaksot uudelleen")
+    b.add_argument("--retries", type=int, default=2, help="uudelleenyritykset per jakso")
+    b.add_argument("--pause", type=float, default=1.0, help="tauko pyyntöjen välillä (s)")
     r = sub.add_parser("load-reference", help="lataa laite- ja lämmitystiedot tietokantaan")
     r.add_argument("path", nargs="?")
     s = sub.add_parser("stats", help="näytä vuoden keskihinta ja hajonta")
