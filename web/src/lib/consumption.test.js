@@ -31,6 +31,19 @@ test('yleinen CSV: suomalainen aika paikallisena aikana, Wh', () => {
   assert.equal(parseTime('2026-07-01T12:00', false), Date.parse('2026-07-01T09:00:00Z'));
 });
 
+test('Datahub-CSV englanninkielisin otsikoin (BOM, EST-laatu, tunti + vartti)', () => {
+  const csv = '\uFEFFMeteringPointGSRN;Product Type;Resolution;Unit Type;Reading Type;Start Time;Quantity;Quality\n'
+    + '643;8716867000030;PT1H;kWh;BN01;2026-07-08T20:00:00Z;0,080000;OK\n'
+    + '643;8716867000030;PT1H;kWh;BN01;2026-07-08T21:00:00Z;0,100000;EST\n'
+    + '643;8716867000030;PT15M;kWh;BN01;2026-07-08T21:00:00Z;0,020000;OK\n'
+    + '643;8716867000030;PT15M;kWh;BN01;2026-07-08T21:15:00Z;0,030000;OK\n';
+  const r = parseConsumptionCsv(csv);
+  assert.equal(r.format, 'datahub');
+  assert.equal(r.points.length, 3); // vartit korvaavat saman tunnin tuntiarvon
+  assert.equal(r.estimated, 0);
+  assert.equal(r.resolutionMin, 15);
+});
+
 test('virheellinen tiedosto', () => {
   assert.throws(() => parseConsumptionCsv('foo;bar\n1;2\n'), /aika- ja kulutussarakkeita/);
 });

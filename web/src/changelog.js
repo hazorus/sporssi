@@ -2,6 +2,19 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.7.1',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Korjaukset',
+        items: [
+          'Oma kulutus: Datahubin englanninkielisin otsikoin (Start Time, Quantity) ladattu tiedosto tunnistetaan.',
+          'Analyysi rajataan Spörssin hintahistorian alkuun, ja sivu kertoo, kuinka paljon vanhempaa kulutusta jäi pois.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.7',
     date: '2026-11-11',
     sections: [

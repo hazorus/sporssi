@@ -79,7 +79,9 @@ export function parseConsumptionCsv(text) {
   const iUnit = findCol(header, /yksikk|unit/);
   const iType = findCol(header, /lukeman tyyppi|reading type/);
   const iQuality = findCol(header, /laatu|quality|status/);
-  const isDatahub = header.includes('alkuaika') && (iRes >= 0 || iType >= 0);
+  // Datahubin tiedosto on joko suomen- tai englanninkielisin otsikoin (Alkuaika / Start Time).
+  const isDatahub = (header.includes('alkuaika') || header.includes('start time') || header.some((h) => /meteringpoint|mittauspiste/.test(h)))
+    && (iRes >= 0 || iType >= 0);
   const valueIsWh = /\bwh\b/.test(header[iValue]) && !/kwh/.test(header[iValue]);
 
   const raw = [];

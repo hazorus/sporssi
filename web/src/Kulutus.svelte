@@ -19,6 +19,7 @@
   let error = $state('');
   let loading = $state('');
   let spot = $state(null);         // Map t -> c/kWh ALV 0
+  let priceFirst = $state(null);   // hintahistorian ensimmäinen päivä (VVVV-KK-PP)
   let dragOver = $state(false);
 
   // --- tiedoston luku -----------------------------------------------------------------------
@@ -65,10 +66,14 @@
   async function loadPrices() {
     if (!parsed?.points.length) return;
     loading = 'Haetaan hintahistoriaa…';
-    const first = localDate(parsed.points[0].t);
+    let first = localDate(parsed.points[0].t);
     const last = localDate(parsed.points[parsed.points.length - 1].t);
     const map = new Map();
     try {
+      // Haetaan vain sieltä, mistä palvelimella on hintahistoriaa.
+      const st = await fetch(`${base}/stats`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      priceFirst = st?.available?.first ?? null;
+      if (priceFirst && priceFirst > first) first = priceFirst;
       let d = first;
       while (d <= last) {
         let e = addDays(d, 365);
@@ -103,8 +108,14 @@
   const baseW = $derived(joined ? estimateBaseW(joined.rows) : null);
   const result = $derived(joined && range ? analyze(joined.rows, range.from, range.to, { ...opts, baseW: baseW ?? 0 }) : null);
   const tipList = $derived(result ? tips(result, { ...opts, baseW }) : []);
-  const coverageNote = $derived(joined && joined.missing
-    ? `${joined.missing} kulutusjaksolle ei löytynyt hintaa (Spörssin hintahistoria alkaa myöhemmin tai puuttuu), ja ne jätettiin pois.` : '');
+  const coverageNote = $derived.by(() => {
+    if (!joined || !joined.missing) return '';
+    const before = priceFirst && parsed ? parsed.points.filter((p) => localDate(p.t) < priceFirst).length : 0;
+    const parts = [];
+    if (before) parts.push(`Spörssin hintahistoria alkaa ${fmtDay(priceFirst)}, joten sitä vanhempi kulutus (${before.toLocaleString('fi-FI')} riviä) ei ole mukana analyysissa.`);
+    if (joined.missing - before > 0) parts.push(`${(joined.missing - before).toLocaleString('fi-FI')} kulutusjaksolle ei löytynyt hintaa, ja ne jätettiin pois.`);
+    return parts.join(' ');
+  });
 
   function useBase() {
     const h = load('sporssi.heating', {});
