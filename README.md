@@ -3,6 +3,8 @@
 Web-sovellus, joka näyttää Suomen pörssisähkön hinnan tunneittain tai varteittain ja laskee
 kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin hinnalla.
 
+**Kokeile sovellusta: <https://hazor.iki.fi/sporssi/>**
+
 - **Käyttö nyt**: valittujen laitteiden käyttökustannus, jos ne käynnistetään heti, sekä kaavio
   käyttökertojen hinnasta eri aloitusaikoina niin pitkälle kuin hintoja on (euroina tai prosentteina
   heti käynnistämisen hinnasta). Ensikäynnillä valittuna ovat tyypillisimmät kodinkoneet.
