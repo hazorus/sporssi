@@ -10,6 +10,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      input: { main: 'index.html', muutokset: 'muutokset.html' },
+    },
     chunkSizeWarningLimit: 900,
   },
 });

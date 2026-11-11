@@ -31,6 +31,12 @@ kodinkoneiden ja sähkölämmityksen kulutuksen ja kustannuksen kulloisellakin h
   (Safari → Jaa → Lisää Koti-valikkoon). Ilman verkkoa näytetään viimeksi haetut tiedot.
 - Hinnaksi voi valita pelkän spot-hinnan (ALV 0) tai kuluttajahinnan (ALV, marginaali, siirto, sähkövero).
 
+## Versiot
+
+Nykyinen versio näkyy sivun alalaidassa, ja siitä on linkki muutoshistoriaan (`muutokset.html`).
+Versiot ja muutokset ylläpidetään tiedostossa `web/src/changelog.js`; käytäntö on kuvattu
+tiedostossa `CLAUDE.md`.
+
 ## Rakenne
 
 ```

@@ -19,6 +19,7 @@
   import NowCosts from './components/NowCosts.svelte';
   import ShareChart from './components/ShareChart.svelte';
   import InstallButton from './components/InstallButton.svelte';
+  import { VERSION } from './changelog.js';
 
   const DEFAULT_HEATING = {
     location: 'helsinki', system: 'ilp', mode: 'era', area: 120,
@@ -457,6 +458,7 @@
     Hinnat: Nord Poolin day-ahead-hinnat alueelle FI (ENTSO-E Transparency Platform / sahkotin.fi).
     Säätiedot: Ilmatieteen laitoksen avoin data. Laitteiden kulutustiedot: Motiva, EU:n energiamerkintä (EPREL),
     Helen; lähteet näkyvät kunkin laitteen kohdalla. Kustannukset ovat arvioita.
+    <p class="version"><a href="./muutokset.html" title="Muutoshistoria">Spörssi versio {VERSION}</a></p>
   </footer>
 </div>
 
@@ -476,5 +478,6 @@
   .cost-toggle > summary h2 { display: inline; margin: 0; }
   .cost-toggle[open] > summary { margin-bottom: .5rem; }
   footer { padding: 0 .2rem 2rem; }
+  .version { margin: .6rem 0 0; }
   .warn { border-left: 3px solid var(--yellow); padding: .3rem .6rem; background: var(--row-alt); }
 </style>
