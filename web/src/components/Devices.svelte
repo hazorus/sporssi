@@ -86,6 +86,7 @@
     {#if selected.length === 0}
       <p class="muted">Valitse laitteet luettelosta, niin näet niiden käyttökustannukset.</p>
     {/if}
+    <div class="dev-list">
     {#each selected as dev (dev.id)}
       {@const r = info(dev)}
       <div class="dev">
@@ -93,8 +94,8 @@
           <details class="dev-details" use:persistOpen={'laite.' + dev.id}>
             <summary class="dev-head" title="Näytä tai piilota asetukset">
               <b class="name">{dev.name}</b>
-              <span class="meta muted">{r.continuous ? 'jatkuva kulutus' : `klo ${dev.start ?? '–'} · ${dev.duration_min} min`}</span>
-              <span class="num cost">{fmtKwh(r.kwh)} kWh{r.continuous ? '/vrk' : ''} · <b>{fmtEur(r.eur)}</b></span>
+              <span class="meta muted">{r.continuous ? 'jatkuva' : `klo ${dev.start ?? '–'}`}</span>
+              <span class="num cost"><b>{fmtEur(r.eur)}</b>{r.continuous ? '/vrk' : ''}</span>
             </summary>
             {#if r.continuous}
               <div class="row small fields">
@@ -125,15 +126,9 @@
             {@const save = r.eur - r.best.eur}
             <p class="small best">
               {#if save >= 0.005}
-                <span>
-                  {#if screen.narrow}
-                    Halvin {fmtEur(r.best.eur)} (−{fmtEur(save)})
-                  {:else}
-                    Halvin aloitus {isToday ? 'loppupäivänä' : 'tänä päivänä'} <b>klo {hhmm(r.best.t)}</b>: {fmtEur(r.best.eur)}
-                    (säästö {fmtEur(save)})
-                  {/if}
-                </span>
-                <button type="button" title="Siirrä aloitus halvimpaan aikaan" onclick={() => set(dev, 'start', hhmm(r.best.t))}>{screen.narrow ? `Siirrä klo ${hhmm(r.best.t)}` : 'Siirrä'}</button>
+                <button type="button" title="Siirrä aloitus halvimpaan aikaan {isToday ? 'loppupäivänä' : 'tänä päivänä'}"
+                  onclick={() => set(dev, 'start', hhmm(r.best.t))}>Halvin klo {hhmm(r.best.t)}</button>
+                <span>{fmtEur(r.best.eur)} (säästö {fmtEur(save)})</span>
               {:else}<span class="pill">valittu aika on halvin</span>{/if}
             </p>
           {:else if r.eur === null}
@@ -142,6 +137,7 @@
         {/if}
       </div>
     {/each}
+    </div>
     {#if selected.length}
       <details class="small muted sources" use:persistOpen={'lahteet'}>
         <summary>Valittujen laitteiden tiedot ja lähteet</summary>
@@ -165,7 +161,9 @@
   </div>
 
   <div class="picker-col">
-    <h3>{screen.narrow ? 'Lisää tai poista laitteita' : 'Valitse laitteet'}</h3>
+    <details class="picker" use:persistOpen={'laitevalinta'}>
+    <summary><h3>Lisää tai poista laitteita</h3></summary>
+    <div class="cats">
     {#each categories as cat (cat)}
       {@const n = countIn(cat)}
       <details class="cat" open={!screen.narrow} use:persistOpen={'luokka.' + cat}>
@@ -180,6 +178,7 @@
         {/each}
       </details>
     {/each}
+    </div>
 
     <details class="add" use:persistOpen={'oma-laite'}>
       <summary><b>+ Lisää oma laite</b></summary>
@@ -207,16 +206,18 @@
         <p class="muted small">Omat laitteet tallentuvat tähän selaimeen.</p>
       </form>
     </details>
+    </details>
   </div>
 </div>
 
 <style>
-  .devices { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap: 1.5rem; }
-  .picker-col { order: -1; }   /* leveällä näytöllä valinta vasemmalla */
-  @media (max-width: 640px) {
-    .devices { grid-template-columns: 1fr; gap: .8rem; }
-    .picker-col { order: 0; }  /* puhelimessa valitut ensin, luettelo alla */
-  }
+  /* Valitut laitteet ensin; valintaluettelo kokoontaitettavana niiden alla. */
+  .devices { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+  .dev-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); column-gap: 1.5rem; }
+  .picker > summary { cursor: pointer; }
+  .picker > summary h3 { display: inline; }
+  .picker[open] > summary { margin-bottom: .5rem; }
+  .picker .cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); column-gap: 1rem; align-items: start; }
   details.cat { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 .5rem; padding: .35rem .7rem; }
   details.cat > summary { display: flex; gap: .5rem; align-items: center; color: var(--muted); padding: .15rem 0; }
   details.cat[open] > summary { margin-bottom: .2rem; }
@@ -232,13 +233,13 @@
   .dev { border-bottom: 1px solid var(--border); padding: .6rem 0; }
   .dev-top { display: flex; gap: .5rem; align-items: flex-start; }
   .dev-details { flex: 1; min-width: 0; }
-  .dev-head { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; cursor: pointer; list-style: none; }
+  /* Otsikkorivi yhdellä rivillä: ▸ | nimi (rivittyy tarvittaessa) | kellonaika | hinta */
+  .dev-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 0 .5rem; align-items: baseline; cursor: pointer; list-style: none; }
+  .dev-head .meta, .dev-head .cost { white-space: nowrap; }
   .dev-head::-webkit-details-marker { display: none; }
   .dev-head::before { content: '▸'; width: .9rem; color: var(--muted); }
   .dev-details[open] > .dev-head::before { content: '▾'; }
-  .dev-head .name { flex: 1 1 12rem; }
-  .dev-head .meta { flex: 1 1 8rem; }
-  .dev-head .cost { margin-left: auto; }
+
   .fields { margin-top: .35rem; gap: .4rem; }
   .fields .field input { width: 6.5rem; }
   @media (max-width: 640px) {
