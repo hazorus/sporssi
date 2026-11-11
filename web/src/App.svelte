@@ -548,7 +548,10 @@
     Hinnat: Nord Poolin day-ahead-hinnat alueelle FI (ENTSO-E Transparency Platform / sahkotin.fi).
     Säätiedot: Ilmatieteen laitoksen avoin data. Laitteiden kulutustiedot: Motiva, EU:n energiamerkintä (EPREL),
     Helen; lähteet näkyvät kunkin laitteen kohdalla. Kustannukset ovat arvioita.
-    <p class="version"><a href="./muutokset.html" title="Muutoshistoria">Spörssi versio {VERSION}</a></p>
+    <p class="version"><a href="./muutokset.html" title="Muutoshistoria">Spörssi versio {VERSION}</a>
+      · © 2026 hazorus · Lisenssi <a href="./LICENSE.txt">EUPL-1.2</a>
+      · <a href="https://github.com/hazorus/sporssi">Lähdekoodi</a>
+      · <a href="./third-party-licenses.txt">Kolmansien osapuolten lisenssit</a></p>
   </footer>
 </div>
 

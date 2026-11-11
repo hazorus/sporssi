@@ -2,6 +2,18 @@
 // Päivitä aina, kun muutoksia commitoidaan (ks. CLAUDE.md / README).
 export const CHANGELOG = [
   {
+    version: '1.5',
+    date: '2026-11-11',
+    sections: [
+      {
+        title: 'Muutokset',
+        items: [
+          'Spörssi on lisensoitu EUPL-1.2-lisenssillä; sivun alalaidassa linkit lisenssiin, lähdekoodiin ja käytettyjen kirjastojen lisensseihin.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.4',
     date: '2026-11-11',
     sections: [

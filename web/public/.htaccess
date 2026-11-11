@@ -1,4 +1,5 @@
 AddType application/manifest+json .webmanifest
+AddCharset utf-8 .txt
 
 # Apache: käännetyt tiedostot (assets/) saa välimuistittaa pitkään,
 # index.html ja config.js eivät.

@@ -214,3 +214,18 @@ cd web && npm test
 Käännetty käyttöliittymä käyttää suhteellisia polkuja (`base: './'`), joten sen voi sijoittaa mihin
 tahansa hakemistoon. Jos rajapinta on muualla, muuta `config.js`:n `apiBase` ja aseta
 palvelimelle `SPORSSI_CORS_ORIGIN`.
+
+## Lisenssi
+
+© 2026 hazorus. Spörssi on lisensoitu [Euroopan unionin yleisellä lisenssillä EUPL-1.2](LICENSE)
+(European Union Public Licence v. 1.2; virallinen suomenkielinen versio:
+<https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12>).
+
+- Ohjelmaa saa käyttää, muokata ja jakaa, myös kaupallisesti. Jos muokattua versiota jaetaan tai
+  tarjotaan muiden käyttöön verkkopalveluna, sen lähdekoodi on annettava saataville EUPL-1.2:lla
+  (tai sen liitteessä luetellulla yhteensopivalla lisenssillä).
+- Lisenssi ei anna oikeutta käyttää nimeä "Spörssi" muokatuissa versioissa.
+- Käytettyjen kirjastojen lisenssit: käännöksessä syntyvä `third-party-licenses.txt`
+  (Svelte, ECharts, ZRender ym.). Ulkoisen datan ehdot: Ilmatieteen laitoksen avoin data
+  CC BY 4.0, ENTSO-E Transparency Platformin käyttöehdot.
+
